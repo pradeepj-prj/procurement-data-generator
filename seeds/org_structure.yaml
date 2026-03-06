@@ -1,0 +1,201 @@
+company:
+  company_code: AMRX
+  company_name: "AMR Robotics Pte Ltd"
+  country: SG
+  currency: SGD
+
+purchasing_orgs:
+  - purch_org_id: PO01
+    purch_org_name: "Central Procurement - Direct Materials"
+    company_code: AMRX
+  - purch_org_id: PO02
+    purch_org_name: "Central Procurement - Indirect & Services"
+    company_code: AMRX
+
+purchasing_groups:
+  - purch_group_id: PG000001
+    display_code: PG-ELEC
+    purch_group_name: "Electronics & Sensors"
+    purch_org_id: PO01
+  - purch_group_id: PG000002
+    display_code: PG-MOTN
+    purch_group_name: "Motion & Drive Components"
+    purch_org_id: PO01
+  - purch_group_id: PG000003
+    display_code: PG-POWR
+    purch_group_name: "Power & Battery Systems"
+    purch_org_id: PO01
+  - purch_group_id: PG000004
+    display_code: PG-MECH
+    purch_group_name: "Mechanical & Structural"
+    purch_org_id: PO01
+  - purch_group_id: PG000005
+    display_code: PG-PACK
+    purch_group_name: "Packaging & Shipping"
+    purch_org_id: PO01
+  - purch_group_id: PG000006
+    display_code: PG-SRVC
+    purch_group_name: "Services & MRO"
+    purch_org_id: PO02
+
+plants:
+  - plant_id: SG01
+    plant_name: "Singapore HQ & Pilot Assembly"
+    country: SG
+    city: Singapore
+    function: "HQ + Engineering + Pilot"
+    company_code: AMRX
+  - plant_id: MY01
+    plant_name: "Penang Production Plant"
+    country: MY
+    city: Penang
+    function: "Main Production"
+    company_code: AMRX
+  - plant_id: VN01
+    plant_name: "Ho Chi Minh Sub-Assembly"
+    country: VN
+    city: HCMC
+    function: "Harness + Sub-Assembly"
+    company_code: AMRX
+
+storage_locations:
+  # SG01 - 2 locations
+  - storage_loc_id: SG01-RM01
+    plant_id: SG01
+    storage_loc_name: "Pilot Raw Materials"
+    storage_type: RAW
+  - storage_loc_id: SG01-QI01
+    plant_id: SG01
+    storage_loc_name: "Quality Inspection Area"
+    storage_type: QI
+  # MY01 - 5 locations
+  - storage_loc_id: MY01-RM01
+    plant_id: MY01
+    storage_loc_name: "Raw Materials Warehouse"
+    storage_type: RAW
+  - storage_loc_id: MY01-WP01
+    plant_id: MY01
+    storage_loc_name: "Work-in-Progress Area"
+    storage_type: WIP
+  - storage_loc_id: MY01-FG01
+    plant_id: MY01
+    storage_loc_name: "Finished Goods Warehouse"
+    storage_type: FG
+  - storage_loc_id: MY01-QI01
+    plant_id: MY01
+    storage_loc_name: "Quality Inspection Bay"
+    storage_type: QI
+  - storage_loc_id: MY01-MR01
+    plant_id: MY01
+    storage_loc_name: "MRO Supplies Store"
+    storage_type: MRO
+  # VN01 - 3 locations
+  - storage_loc_id: VN01-RM01
+    plant_id: VN01
+    storage_loc_name: "Raw Materials Storage"
+    storage_type: RAW
+  - storage_loc_id: VN01-WP01
+    plant_id: VN01
+    storage_loc_name: "Sub-Assembly WIP"
+    storage_type: WIP
+  - storage_loc_id: VN01-FG01
+    plant_id: VN01
+    storage_loc_name: "Finished Sub-Assemblies"
+    storage_type: FG
+
+cost_centers:
+  # SG01 - Engineering HQ
+  - cost_center_id: CC-SG01-ENG
+    cost_center_name: "SG01 Engineering"
+    plant_id: SG01
+    department: Engineering
+  - cost_center_id: CC-SG01-RND
+    cost_center_name: "SG01 R&D"
+    plant_id: SG01
+    department: R&D
+  - cost_center_id: CC-SG01-PRD
+    cost_center_name: "SG01 Pilot Production"
+    plant_id: SG01
+    department: Production
+  - cost_center_id: CC-SG01-QAL
+    cost_center_name: "SG01 Quality"
+    plant_id: SG01
+    department: Quality
+  - cost_center_id: CC-SG01-LOG
+    cost_center_name: "SG01 Logistics"
+    plant_id: SG01
+    department: Logistics
+  - cost_center_id: CC-SG01-ADM
+    cost_center_name: "SG01 Administration"
+    plant_id: SG01
+    department: Admin
+  # MY01 - Main production
+  - cost_center_id: CC-MY01-PRD
+    cost_center_name: "MY01 Production"
+    plant_id: MY01
+    department: Production
+  - cost_center_id: CC-MY01-PR2
+    cost_center_name: "MY01 Production Line 2"
+    plant_id: MY01
+    department: Production
+  - cost_center_id: CC-MY01-PR3
+    cost_center_name: "MY01 Production Line 3"
+    plant_id: MY01
+    department: Production
+  - cost_center_id: CC-MY01-QAL
+    cost_center_name: "MY01 Quality"
+    plant_id: MY01
+    department: Quality
+  - cost_center_id: CC-MY01-LOG
+    cost_center_name: "MY01 Logistics"
+    plant_id: MY01
+    department: Logistics
+  - cost_center_id: CC-MY01-ADM
+    cost_center_name: "MY01 Administration"
+    plant_id: MY01
+    department: Admin
+  - cost_center_id: CC-MY01-MRO
+    cost_center_name: "MY01 Maintenance"
+    plant_id: MY01
+    department: Production
+  - cost_center_id: CC-MY01-ENG
+    cost_center_name: "MY01 Process Engineering"
+    plant_id: MY01
+    department: Engineering
+  # VN01 - Sub-assembly
+  - cost_center_id: CC-VN01-PRD
+    cost_center_name: "VN01 Sub-Assembly Production"
+    plant_id: VN01
+    department: Production
+  - cost_center_id: CC-VN01-PR2
+    cost_center_name: "VN01 Harness Production"
+    plant_id: VN01
+    department: Production
+  - cost_center_id: CC-VN01-QAL
+    cost_center_name: "VN01 Quality"
+    plant_id: VN01
+    department: Quality
+  - cost_center_id: CC-VN01-LOG
+    cost_center_name: "VN01 Logistics"
+    plant_id: VN01
+    department: Logistics
+  - cost_center_id: CC-VN01-ADM
+    cost_center_name: "VN01 Administration"
+    plant_id: VN01
+    department: Admin
+
+pg_category_mapping:
+  - purch_group_id: PG000001
+    category_id: ELEC
+  - purch_group_id: PG000002
+    category_id: MOTN
+  - purch_group_id: PG000003
+    category_id: POWR
+  - purch_group_id: PG000004
+    category_id: MECH
+  - purch_group_id: PG000005
+    category_id: PACK
+  - purch_group_id: PG000006
+    category_id: SRVC
+  - purch_group_id: PG000006
+    category_id: MRO

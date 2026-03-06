@@ -1,0 +1,5 @@
+scale: 1
+demo_reference_date: "2025-09-15"
+time_window_start: "2024-04-01"
+time_window_end: "2025-09-30"
+random_seed: 42

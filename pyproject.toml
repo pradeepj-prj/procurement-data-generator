@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "procurement-data-generator"
+version = "1.0.0"
+description = "Generates realistic procurement datasets for AMR manufacturing demo"
+requires-python = ">=3.10"
+dependencies = [
+    "pyyaml>=6.0",
+    "faker>=20.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[project.scripts]
+procurement-generator = "procurement_generator.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

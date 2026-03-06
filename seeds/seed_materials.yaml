@@ -1,0 +1,320 @@
+materials:
+  - material_id: MAT-LIDAR-2D
+    display_code: LIDAR-2D-HOKUYO
+    description: "2D LiDAR Scanner, Hokuyo UST-10LX"
+    material_type: COMPONENT
+    category_id: ELEC-SENS-LIDAR2D
+    base_uom: EA
+    standard_cost: 142.00
+    currency: USD
+    criticality: HIGH
+    criticality_reason_code: SAFETY
+    hazmat_flag: false
+    default_lead_time_days: 21
+    make_or_buy: BUY
+    confidentiality_tier: INTERNAL
+    plants: [SG01, MY01]
+
+  - material_id: MAT-CAM-3D
+    display_code: CAM-DEPTH-INTEL
+    description: "3D Depth Camera, Intel RealSense D455"
+    material_type: COMPONENT
+    category_id: ELEC-SENS-CAM3D
+    base_uom: EA
+    standard_cost: 189.00
+    currency: USD
+    criticality: HIGH
+    criticality_reason_code: LEAD_TIME
+    hazmat_flag: false
+    default_lead_time_days: 90
+    make_or_buy: BUY
+    confidentiality_tier: INTERNAL
+    plants: [SG01, MY01]
+
+  - material_id: MAT-SBC-IND
+    display_code: SBC-NVIDIA-JETSON
+    description: "Industrial SBC, NVIDIA Jetson Orin"
+    material_type: COMPONENT
+    category_id: ELEC-COMP-SBC
+    base_uom: EA
+    standard_cost: 499.00
+    currency: USD
+    criticality: HIGH
+    criticality_reason_code: SUPPLY_RISK
+    hazmat_flag: false
+    default_lead_time_days: 45
+    make_or_buy: BUY
+    confidentiality_tier: INTERNAL
+    plants: [MY01]  # NOT SG01 per SEED-007
+
+  - material_id: MAT-IMU-01
+    display_code: IMU-BOSCH-BNO055
+    description: "9-axis IMU, Bosch BNO055"
+    material_type: COMPONENT
+    category_id: ELEC-SENS-IMU
+    base_uom: EA
+    standard_cost: 12.50
+    currency: USD
+    criticality: MEDIUM
+    criticality_reason_code: null
+    hazmat_flag: false
+    default_lead_time_days: 14
+    make_or_buy: BUY
+    confidentiality_tier: INTERNAL
+    plants: [SG01, MY01]
+
+  - material_id: MAT-ENC-01
+    display_code: ENCODER-WHEEL-512
+    description: "Wheel Encoder 512 PPR"
+    material_type: COMPONENT
+    category_id: ELEC-SENS-ENCODER
+    base_uom: EA
+    standard_cost: 8.75
+    currency: USD
+    criticality: MEDIUM
+    criticality_reason_code: null
+    hazmat_flag: false
+    default_lead_time_days: 10
+    make_or_buy: BUY
+    confidentiality_tier: INTERNAL
+    plants: [SG01, MY01, VN01]
+
+  - material_id: MAT-MCU-01
+    display_code: MCU-STM32-F4
+    description: "Microcontroller STM32F407"
+    material_type: COMPONENT
+    category_id: ELEC-COMP-MCU
+    base_uom: EA
+    standard_cost: 7.20
+    currency: USD
+    criticality: MEDIUM
+    criticality_reason_code: null
+    hazmat_flag: false
+    default_lead_time_days: 14
+    make_or_buy: BUY
+    confidentiality_tier: INTERNAL
+    plants: [SG01, MY01]
+
+  - material_id: MAT-MOT-200W
+    display_code: MOTOR-BLDC-200W
+    description: "BLDC Motor 200W 48V"
+    material_type: COMPONENT
+    category_id: MOTN-MOT-BLDC
+    base_uom: EA
+    standard_cost: 85.00
+    currency: USD
+    criticality: MEDIUM
+    criticality_reason_code: null
+    hazmat_flag: false
+    default_lead_time_days: 18
+    make_or_buy: BUY
+    confidentiality_tier: INTERNAL
+    plants: [MY01, VN01]
+
+  - material_id: MAT-MOT-400W
+    display_code: MOTOR-BLDC-400W
+    description: "BLDC Motor 400W 48V"
+    material_type: COMPONENT
+    category_id: MOTN-MOT-BLDC
+    base_uom: EA
+    standard_cost: 102.00
+    currency: USD
+    criticality: MEDIUM
+    criticality_reason_code: null
+    hazmat_flag: false
+    default_lead_time_days: 21
+    make_or_buy: BUY
+    confidentiality_tier: INTERNAL
+    plants: [MY01]
+
+  - material_id: MAT-MOT-INTG
+    display_code: MOTOR-BLDC-INTG
+    description: "BLDC Motor Integrated w/ Driver"
+    material_type: ASSEMBLY
+    category_id: MOTN-MOT-BLDC
+    base_uom: EA
+    standard_cost: 118.00
+    currency: USD
+    criticality: MEDIUM
+    criticality_reason_code: null
+    hazmat_flag: false
+    default_lead_time_days: 28
+    make_or_buy: BUY
+    confidentiality_tier: INTERNAL
+    plants: [MY01]
+
+  - material_id: MAT-GBOX-01
+    display_code: GBOX-PLAN-50
+    description: "Planetary Gearbox 50:1 Ratio"
+    material_type: COMPONENT
+    category_id: MOTN-DRV-GBOX
+    base_uom: EA
+    standard_cost: 65.00
+    currency: USD
+    criticality: MEDIUM
+    criticality_reason_code: null
+    hazmat_flag: false
+    default_lead_time_days: 14
+    make_or_buy: BUY
+    confidentiality_tier: INTERNAL
+    plants: [MY01, VN01]
+
+  - material_id: MAT-BAT-CELL
+    display_code: BATCELL-21700
+    description: "Li-ion Battery Cell 21700 4800mAh"
+    material_type: COMPONENT
+    category_id: POWR-BAT-CELL
+    base_uom: EA
+    standard_cost: 4.80
+    currency: USD
+    criticality: HIGH
+    criticality_reason_code: REGULATORY
+    hazmat_flag: true
+    default_lead_time_days: 28
+    make_or_buy: BUY
+    confidentiality_tier: RESTRICTED
+    plants: [MY01]
+
+  - material_id: MAT-BAT-PACK
+    display_code: BATPACK-48V-30AH
+    description: "Battery Pack 48V 30Ah Assembly"
+    material_type: ASSEMBLY
+    category_id: POWR-BAT-PACK
+    base_uom: EA
+    standard_cost: 680.00
+    currency: USD
+    criticality: HIGH
+    criticality_reason_code: SAFETY
+    hazmat_flag: true
+    default_lead_time_days: 35
+    make_or_buy: BUY
+    confidentiality_tier: RESTRICTED
+    plants: [MY01]
+
+  - material_id: MAT-BMS
+    display_code: BMS-MAIN
+    description: "Battery Management System Main Board"
+    material_type: COMPONENT
+    category_id: POWR-BAT-BMS
+    base_uom: EA
+    standard_cost: 125.00
+    currency: USD
+    criticality: HIGH
+    criticality_reason_code: SAFETY
+    hazmat_flag: false
+    default_lead_time_days: 42
+    make_or_buy: BUY
+    confidentiality_tier: INTERNAL
+    plants: [MY01]
+
+  - material_id: MAT-CHG-01
+    display_code: CHARGER-48V-15A
+    description: "Charger 48V 15A Intelligent"
+    material_type: COMPONENT
+    category_id: POWR-CHG-UNIT
+    base_uom: EA
+    standard_cost: 95.00
+    currency: USD
+    criticality: MEDIUM
+    criticality_reason_code: null
+    hazmat_flag: false
+    default_lead_time_days: 21
+    make_or_buy: BUY
+    confidentiality_tier: INTERNAL
+    plants: [MY01]
+
+  - material_id: MAT-DCDC-01
+    display_code: DCDC-48-12
+    description: "DC-DC Converter 48V to 12V 20A"
+    material_type: COMPONENT
+    category_id: POWR-CNV-DCDC
+    base_uom: EA
+    standard_cost: 28.00
+    currency: USD
+    criticality: MEDIUM
+    criticality_reason_code: null
+    hazmat_flag: false
+    default_lead_time_days: 14
+    make_or_buy: BUY
+    confidentiality_tier: INTERNAL
+    plants: [SG01, MY01]
+
+  - material_id: MAT-SHEET-01
+    display_code: SHEET-CHASSIS-TOP
+    description: "Sheet Metal, Chassis Top Plate 2mm"
+    material_type: RAW
+    category_id: MECH-STR-SHEET
+    base_uom: EA
+    standard_cost: 18.50
+    currency: USD
+    criticality: LOW
+    criticality_reason_code: null
+    hazmat_flag: false
+    default_lead_time_days: 10
+    make_or_buy: BUY
+    confidentiality_tier: PUBLIC
+    plants: [MY01, VN01]
+
+  - material_id: MAT-CON-24P
+    display_code: CONN-24P-MOLEX
+    description: "Industrial Connector 24-pin Molex"
+    material_type: COMPONENT
+    category_id: MECH-WIR-CABLE
+    base_uom: EA
+    standard_cost: 3.20
+    currency: USD
+    criticality: MEDIUM
+    criticality_reason_code: null
+    hazmat_flag: false
+    default_lead_time_days: 10
+    make_or_buy: BUY
+    confidentiality_tier: INTERNAL
+    plants: [SG01, MY01, VN01]
+
+  - material_id: MAT-FOAM-01
+    display_code: FOAM-INSERT-AMR
+    description: "Foam Insert, AMR Shipping"
+    material_type: RAW
+    category_id: PACK-PRI-FOAM
+    base_uom: EA
+    standard_cost: 2.40
+    currency: USD
+    criticality: LOW
+    criticality_reason_code: null
+    hazmat_flag: false
+    default_lead_time_days: 7
+    make_or_buy: BUY
+    confidentiality_tier: PUBLIC
+    plants: [MY01, VN01]
+
+  - material_id: MAT-SVC-CAL
+    display_code: SVC-CALIB-SENSOR
+    description: "Sensor Calibration Service"
+    material_type: SERVICE
+    category_id: SRVC-TECH-CALIB
+    base_uom: HR
+    standard_cost: 150.00
+    currency: USD
+    criticality: LOW
+    criticality_reason_code: null
+    hazmat_flag: false
+    default_lead_time_days: 5
+    make_or_buy: BUY
+    confidentiality_tier: PUBLIC
+    plants: [SG01]
+
+  - material_id: MAT-SVC-FRT
+    display_code: SVC-FREIGHT-SEA
+    description: "Sea Freight Service, APAC"
+    material_type: SERVICE
+    category_id: SRVC-LOG-FREIGHT
+    base_uom: HR
+    standard_cost: 85.00
+    currency: USD
+    criticality: LOW
+    criticality_reason_code: null
+    hazmat_flag: false
+    default_lead_time_days: 3
+    make_or_buy: BUY
+    confidentiality_tier: PUBLIC
+    plants: [SG01, MY01, VN01]

@@ -1,0 +1,120 @@
+contracts:
+  - contract_id: CTR-00001
+    display_code: CTR-HOKUYO-2025-01
+    vendor_id: VND-HOKUYO
+    valid_from: "2024-08-15"
+    valid_to: "2025-08-15"
+    contract_type: QUANTITY
+    status: ACTIVE
+    currency: USD
+    incoterms: FOB
+    confidentiality_tier: INTERNAL
+    items:
+      - item_number: 10
+        material_id: MAT-LIDAR-2D
+        agreed_price: 142.00
+        price_uom: EA
+        max_quantity: 500
+        target_value: null
+        consumed_quantity: 425
+        consumed_value: null
+
+  - contract_id: CTR-00002
+    display_code: CTR-CATL-2025-01
+    vendor_id: VND-CATL
+    valid_from: "2025-01-01"
+    valid_to: "2025-12-31"
+    contract_type: VALUE
+    status: ACTIVE
+    currency: USD
+    incoterms: CIF
+    confidentiality_tier: INTERNAL
+    items:
+      - item_number: 10
+        material_id: MAT-BAT-CELL
+        agreed_price: 4.80
+        price_uom: EA
+        max_quantity: null
+        target_value: 250000.00
+        consumed_quantity: null
+        consumed_value: 150000.00
+
+  - contract_id: CTR-00003
+    display_code: CTR-NIDEC-2025-01
+    vendor_id: VND-NIDEC-JP
+    valid_from: "2025-04-01"
+    valid_to: "2026-03-31"
+    contract_type: QUANTITY
+    status: ACTIVE
+    currency: USD
+    incoterms: FOB
+    confidentiality_tier: INTERNAL
+    items:
+      - item_number: 10
+        material_id: MAT-MOT-200W
+        agreed_price: 85.00
+        price_uom: EA
+        max_quantity: 1000
+        target_value: null
+        consumed_quantity: 450
+        consumed_value: null
+
+  - contract_id: CTR-00004
+    display_code: CTR-MOLEX-2025-01
+    vendor_id: VND-MOLEX-SG
+    valid_from: "2025-01-01"
+    valid_to: "2025-09-30"
+    contract_type: VALUE
+    status: ACTIVE
+    currency: USD
+    incoterms: DDP
+    confidentiality_tier: INTERNAL
+    items:
+      - item_number: 10
+        material_id: MAT-CON-24P
+        agreed_price: 4.85
+        price_uom: EA
+        max_quantity: null
+        target_value: 50000.00
+        consumed_quantity: null
+        consumed_value: 36000.00
+
+  - contract_id: CTR-00005
+    display_code: CTR-INTEL-2024-01
+    vendor_id: VND-INTEL
+    valid_from: "2024-01-01"
+    valid_to: "2025-01-31"
+    contract_type: QUANTITY
+    status: EXPIRED
+    currency: USD
+    incoterms: DDP
+    confidentiality_tier: INTERNAL
+    items:
+      - item_number: 10
+        material_id: MAT-CAM-3D
+        agreed_price: 189.00
+        price_uom: EA
+        max_quantity: 200
+        target_value: null
+        consumed_quantity: 200
+        consumed_value: null
+
+  - contract_id: CTR-00006
+    display_code: CTR-BMS-2025-01
+    vendor_id: VND-BMS-01
+    valid_from: "2025-01-01"
+    valid_to: "2025-12-31"
+    contract_type: QUANTITY
+    status: ACTIVE
+    currency: USD
+    incoterms: CIF
+    confidentiality_tier: RESTRICTED
+    items:
+      - item_number: 10
+        material_id: MAT-BMS
+        agreed_price: 125.00
+        price_uom: EA
+        max_quantity: 300
+        target_value: null
+        consumed_quantity: 120
+        consumed_value: null

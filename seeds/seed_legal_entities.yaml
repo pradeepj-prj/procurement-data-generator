@@ -1,0 +1,81 @@
+legal_entities:
+  - legal_entity_id: LE-HOKUYO
+    legal_name: "Hokuyo Automatic Co., Ltd."
+    country_of_incorporation: JP
+    registration_id: JP-123456789
+    vendor_ids: [VND-HOKUYO]
+
+  - legal_entity_id: LE-CATL
+    legal_name: "Contemporary Amperex Technology Co., Limited"
+    country_of_incorporation: CN
+    registration_id: CN-CATL00001
+    vendor_ids: [VND-CATL]
+
+  - legal_entity_id: LE-EVE
+    legal_name: "EVE Energy Co., Ltd."
+    country_of_incorporation: CN
+    registration_id: CN-EVE000001
+    vendor_ids: [VND-EVE]
+
+  - legal_entity_id: LE-NIDEC
+    legal_name: "Nidec Corporation"
+    country_of_incorporation: JP
+    registration_id: JP-NIDEC0001
+    vendor_ids: [VND-NIDEC-JP, VND-NIDEC-MY]
+
+  - legal_entity_id: LE-INTEL
+    legal_name: "Intel Corporation"
+    country_of_incorporation: US
+    registration_id: US-INTEL0001
+    vendor_ids: [VND-INTEL]
+
+  - legal_entity_id: LE-MOLEX
+    legal_name: "Molex LLC"
+    country_of_incorporation: US
+    registration_id: US-MOLEX0001
+    vendor_ids: [VND-MOLEX-SG, VND-MOLEX-CN]
+
+  - legal_entity_id: LE-TDK
+    legal_name: "TDK Corporation"
+    country_of_incorporation: JP
+    registration_id: JP-TDK000001
+    vendor_ids: [VND-TDK-JP, VND-TDK-TW]
+
+  - legal_entity_id: LE-SIEMENS
+    legal_name: "Siemens AG"
+    country_of_incorporation: DE
+    registration_id: DE-SIEMENS01
+    vendor_ids: [VND-SIEMENS-DE, VND-SIEMENS-SG]
+
+  - legal_entity_id: LE-SHEETPRO
+    legal_name: "SheetPro Industries Sdn Bhd"
+    country_of_incorporation: MY
+    registration_id: MY-SHEETPR01
+    vendor_ids: [VND-SHEETPRO]
+
+  - legal_entity_id: LE-BMS01
+    legal_name: "Advanced Power Electronics Ltd"
+    country_of_incorporation: TW
+    registration_id: TW-APE000001
+    vendor_ids: [VND-BMS-01]
+
+alias_groups:
+  - alias_group_id: ALIAS-001
+    legal_entity_id: LE-NIDEC
+    vendor_ids: [VND-NIDEC-JP, VND-NIDEC-MY]
+    rationale: "Japan HQ + Malaysia subsidiary; supplies motors to different plants"
+
+  - alias_group_id: ALIAS-002
+    legal_entity_id: LE-MOLEX
+    vendor_ids: [VND-MOLEX-SG, VND-MOLEX-CN]
+    rationale: "Singapore distribution arm + China manufacturing entity"
+
+  - alias_group_id: ALIAS-003
+    legal_entity_id: LE-TDK
+    vendor_ids: [VND-TDK-JP, VND-TDK-TW]
+    rationale: "Japan HQ + Taiwan sensors division"
+
+  - alias_group_id: ALIAS-004
+    legal_entity_id: LE-SIEMENS
+    vendor_ids: [VND-SIEMENS-DE, VND-SIEMENS-SG]
+    rationale: "Germany HQ + Singapore regional services"

@@ -1,0 +1,287 @@
+source_lists:
+  # SEED-001: LiDAR single-source at SG01 and MY01
+  - material_id: MAT-LIDAR-2D
+    plant_id: SG01
+    vendor_id: VND-HOKUYO
+    preferred_rank: 1
+    contract_covered_flag: true
+    approval_status: APPROVED
+    lane_lead_time_days: 21
+    vendor_material_code: UST-10LX-01
+    min_order_qty: 10
+    confidentiality_tier: INTERNAL
+
+  - material_id: MAT-LIDAR-2D
+    plant_id: MY01
+    vendor_id: VND-HOKUYO
+    preferred_rank: 1
+    contract_covered_flag: true
+    approval_status: APPROVED
+    lane_lead_time_days: 14
+    vendor_material_code: UST-10LX-01
+    min_order_qty: 10
+    confidentiality_tier: INTERNAL
+
+  # SEED-002: Battery cell sourcing (CATL preferred, EVE backup)
+  - material_id: MAT-BAT-CELL
+    plant_id: MY01
+    vendor_id: VND-CATL
+    preferred_rank: 1
+    contract_covered_flag: true
+    approval_status: APPROVED
+    lane_lead_time_days: 28
+    vendor_material_code: CATL-21700-48
+    min_order_qty: 500
+    confidentiality_tier: RESTRICTED
+
+  - material_id: MAT-BAT-CELL
+    plant_id: MY01
+    vendor_id: VND-EVE
+    preferred_rank: 2
+    contract_covered_flag: false
+    approval_status: CONDITIONAL
+    lane_lead_time_days: 35
+    vendor_material_code: EVE-21700-P
+    min_order_qty: 500
+    confidentiality_tier: RESTRICTED
+
+  # SEED-004: BMS with mixed confidentiality source list
+  - material_id: MAT-BMS
+    plant_id: MY01
+    vendor_id: VND-BMS-01
+    preferred_rank: 1
+    contract_covered_flag: true
+    approval_status: APPROVED
+    lane_lead_time_days: 42
+    vendor_material_code: BMS-V3-MAIN
+    min_order_qty: 20
+    confidentiality_tier: RESTRICTED
+
+  - material_id: MAT-BMS
+    plant_id: MY01
+    vendor_id: VND-SIEMENS-DE
+    preferred_rank: 2
+    contract_covered_flag: false
+    approval_status: APPROVED
+    lane_lead_time_days: 56
+    vendor_material_code: SIE-BMS-ALT
+    min_order_qty: 10
+    confidentiality_tier: INTERNAL
+
+  # SEED-005: Motors - only 200W on contract
+  - material_id: MAT-MOT-200W
+    plant_id: MY01
+    vendor_id: VND-NIDEC-JP
+    preferred_rank: 1
+    contract_covered_flag: true
+    approval_status: APPROVED
+    lane_lead_time_days: 18
+    vendor_material_code: M200-48V-A1
+    min_order_qty: 20
+    confidentiality_tier: INTERNAL
+
+  - material_id: MAT-MOT-200W
+    plant_id: MY01
+    vendor_id: VND-NIDEC-MY
+    preferred_rank: 2
+    contract_covered_flag: false
+    approval_status: APPROVED
+    lane_lead_time_days: 7
+    vendor_material_code: M200-48V-MY
+    min_order_qty: 10
+    confidentiality_tier: INTERNAL
+
+  - material_id: MAT-MOT-200W
+    plant_id: VN01
+    vendor_id: VND-NIDEC-MY
+    preferred_rank: 1
+    contract_covered_flag: false
+    approval_status: APPROVED
+    lane_lead_time_days: 5
+    vendor_material_code: M200-48V-MY
+    min_order_qty: 10
+    confidentiality_tier: INTERNAL
+
+  - material_id: MAT-MOT-400W
+    plant_id: MY01
+    vendor_id: VND-NIDEC-JP
+    preferred_rank: 1
+    contract_covered_flag: false
+    approval_status: APPROVED
+    lane_lead_time_days: 21
+    vendor_material_code: M400-48V-A1
+    min_order_qty: 10
+    confidentiality_tier: INTERNAL
+
+  - material_id: MAT-MOT-INTG
+    plant_id: MY01
+    vendor_id: VND-NIDEC-JP
+    preferred_rank: 1
+    contract_covered_flag: false
+    approval_status: APPROVED
+    lane_lead_time_days: 28
+    vendor_material_code: MINTG-48V-A1
+    min_order_qty: 5
+    confidentiality_tier: INTERNAL
+
+  # SEED-007: SBC only at MY01, NOT SG01
+  - material_id: MAT-SBC-IND
+    plant_id: MY01
+    vendor_id: VND-INTEL
+    preferred_rank: 1
+    contract_covered_flag: false
+    approval_status: APPROVED
+    lane_lead_time_days: 45
+    vendor_material_code: JETSON-ORIN-NX
+    min_order_qty: 5
+    confidentiality_tier: INTERNAL
+
+  # SEED-008: 3D camera with 90-day lead time to MY01
+  - material_id: MAT-CAM-3D
+    plant_id: SG01
+    vendor_id: VND-INTEL
+    preferred_rank: 1
+    contract_covered_flag: false
+    approval_status: APPROVED
+    lane_lead_time_days: 85
+    vendor_material_code: RS-D455-IND
+    min_order_qty: 5
+    confidentiality_tier: INTERNAL
+
+  - material_id: MAT-CAM-3D
+    plant_id: MY01
+    vendor_id: VND-INTEL
+    preferred_rank: 1
+    contract_covered_flag: false
+    approval_status: APPROVED
+    lane_lead_time_days: 90
+    vendor_material_code: RS-D455-IND
+    min_order_qty: 10
+    confidentiality_tier: INTERNAL
+
+  # SEED-010: Connector with contract price > standard cost
+  - material_id: MAT-CON-24P
+    plant_id: VN01
+    vendor_id: VND-MOLEX-SG
+    preferred_rank: 1
+    contract_covered_flag: true
+    approval_status: APPROVED
+    lane_lead_time_days: 10
+    vendor_material_code: MLX-24P-IND
+    min_order_qty: 100
+    confidentiality_tier: INTERNAL
+
+  - material_id: MAT-CON-24P
+    plant_id: MY01
+    vendor_id: VND-MOLEX-SG
+    preferred_rank: 1
+    contract_covered_flag: true
+    approval_status: APPROVED
+    lane_lead_time_days: 7
+    vendor_material_code: MLX-24P-IND
+    min_order_qty: 100
+    confidentiality_tier: INTERNAL
+
+  - material_id: MAT-CON-24P
+    plant_id: SG01
+    vendor_id: VND-MOLEX-SG
+    preferred_rank: 1
+    contract_covered_flag: true
+    approval_status: APPROVED
+    lane_lead_time_days: 3
+    vendor_material_code: MLX-24P-IND
+    min_order_qty: 50
+    confidentiality_tier: INTERNAL
+
+  # SEED-011: Sheet metal from CONDITIONAL vendor
+  - material_id: MAT-SHEET-01
+    plant_id: MY01
+    vendor_id: VND-SHEETPRO
+    preferred_rank: 1
+    contract_covered_flag: false
+    approval_status: CONDITIONAL
+    lane_lead_time_days: 10
+    vendor_material_code: SP-CHS-TOP-2MM
+    min_order_qty: 50
+    confidentiality_tier: INTERNAL
+
+  - material_id: MAT-SHEET-01
+    plant_id: VN01
+    vendor_id: VND-SHEETPRO
+    preferred_rank: 1
+    contract_covered_flag: false
+    approval_status: CONDITIONAL
+    lane_lead_time_days: 12
+    vendor_material_code: SP-CHS-TOP-2MM
+    min_order_qty: 50
+    confidentiality_tier: INTERNAL
+
+  # SEED-012: BLDC Motor 200W at different plants with different conditions
+  # (Already covered above: MY01 via NIDEC-JP on contract, VN01 via NIDEC-MY no contract)
+
+  # Additional seed source lists for remaining seed materials
+  - material_id: MAT-IMU-01
+    plant_id: SG01
+    vendor_id: VND-TDK-JP
+    preferred_rank: 1
+    contract_covered_flag: false
+    approval_status: APPROVED
+    lane_lead_time_days: 18
+    vendor_material_code: TDK-BNO055
+    min_order_qty: 25
+    confidentiality_tier: INTERNAL
+
+  - material_id: MAT-IMU-01
+    plant_id: MY01
+    vendor_id: VND-TDK-JP
+    preferred_rank: 1
+    contract_covered_flag: false
+    approval_status: APPROVED
+    lane_lead_time_days: 14
+    vendor_material_code: TDK-BNO055
+    min_order_qty: 50
+    confidentiality_tier: INTERNAL
+
+  - material_id: MAT-GBOX-01
+    plant_id: MY01
+    vendor_id: VND-NIDEC-JP
+    preferred_rank: 1
+    contract_covered_flag: false
+    approval_status: APPROVED
+    lane_lead_time_days: 18
+    vendor_material_code: NID-PG50-1
+    min_order_qty: 10
+    confidentiality_tier: INTERNAL
+
+  - material_id: MAT-GBOX-01
+    plant_id: VN01
+    vendor_id: VND-NIDEC-MY
+    preferred_rank: 1
+    contract_covered_flag: false
+    approval_status: APPROVED
+    lane_lead_time_days: 7
+    vendor_material_code: NID-PG50-MY
+    min_order_qty: 10
+    confidentiality_tier: INTERNAL
+
+  - material_id: MAT-DCDC-01
+    plant_id: SG01
+    vendor_id: VND-TDK-JP
+    preferred_rank: 1
+    contract_covered_flag: false
+    approval_status: APPROVED
+    lane_lead_time_days: 21
+    vendor_material_code: TDK-DCDC-48-12
+    min_order_qty: 20
+    confidentiality_tier: INTERNAL
+
+  - material_id: MAT-DCDC-01
+    plant_id: MY01
+    vendor_id: VND-TDK-JP
+    preferred_rank: 1
+    contract_covered_flag: false
+    approval_status: APPROVED
+    lane_lead_time_days: 18
+    vendor_material_code: TDK-DCDC-48-12
+    min_order_qty: 50
+    confidentiality_tier: INTERNAL

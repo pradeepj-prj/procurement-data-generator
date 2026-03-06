@@ -1,0 +1,506 @@
+categories:
+  # Level 1: Top-level categories
+  - category_id: ELEC
+    category_name: Electronics
+    level: 1
+    parent_category_id: null
+    owner_purch_group_id: PG000001
+
+  - category_id: MOTN
+    category_name: Motion / Mechanical
+    level: 1
+    parent_category_id: null
+    owner_purch_group_id: PG000002
+
+  - category_id: POWR
+    category_name: Power
+    level: 1
+    parent_category_id: null
+    owner_purch_group_id: PG000003
+
+  - category_id: MECH
+    category_name: Mechanical Raw
+    level: 1
+    parent_category_id: null
+    owner_purch_group_id: PG000004
+
+  - category_id: PACK
+    category_name: Packaging
+    level: 1
+    parent_category_id: null
+    owner_purch_group_id: PG000005
+
+  - category_id: SRVC
+    category_name: Services
+    level: 1
+    parent_category_id: null
+    owner_purch_group_id: PG000006
+
+  - category_id: MRO
+    category_name: MRO
+    level: 1
+    parent_category_id: null
+    owner_purch_group_id: PG000006
+
+  # Level 2: Subcategories
+  # Electronics
+  - category_id: ELEC-COMP
+    category_name: Compute
+    level: 2
+    parent_category_id: ELEC
+    owner_purch_group_id: PG000001
+
+  - category_id: ELEC-PCB
+    category_name: "PCB & Assemblies"
+    level: 2
+    parent_category_id: ELEC
+    owner_purch_group_id: PG000001
+
+  - category_id: ELEC-SENS
+    category_name: Sensors
+    level: 2
+    parent_category_id: ELEC
+    owner_purch_group_id: PG000001
+
+  - category_id: ELEC-CONN
+    category_name: Connectivity
+    level: 2
+    parent_category_id: ELEC
+    owner_purch_group_id: PG000001
+
+  # Motion
+  - category_id: MOTN-MOT
+    category_name: Motors
+    level: 2
+    parent_category_id: MOTN
+    owner_purch_group_id: PG000002
+
+  - category_id: MOTN-DRV
+    category_name: Drive Train
+    level: 2
+    parent_category_id: MOTN
+    owner_purch_group_id: PG000002
+
+  - category_id: MOTN-ACT
+    category_name: Actuators
+    level: 2
+    parent_category_id: MOTN
+    owner_purch_group_id: PG000002
+
+  - category_id: MOTN-TRN
+    category_name: Transmission
+    level: 2
+    parent_category_id: MOTN
+    owner_purch_group_id: PG000002
+
+  # Power
+  - category_id: POWR-BAT
+    category_name: Batteries
+    level: 2
+    parent_category_id: POWR
+    owner_purch_group_id: PG000003
+
+  - category_id: POWR-CHG
+    category_name: Charging
+    level: 2
+    parent_category_id: POWR
+    owner_purch_group_id: PG000003
+
+  - category_id: POWR-CNV
+    category_name: Conversion
+    level: 2
+    parent_category_id: POWR
+    owner_purch_group_id: PG000003
+
+  # Mechanical
+  - category_id: MECH-STR
+    category_name: Structural
+    level: 2
+    parent_category_id: MECH
+    owner_purch_group_id: PG000004
+
+  - category_id: MECH-FST
+    category_name: Fasteners
+    level: 2
+    parent_category_id: MECH
+    owner_purch_group_id: PG000004
+
+  - category_id: MECH-WIR
+    category_name: "Wire & Cable"
+    level: 2
+    parent_category_id: MECH
+    owner_purch_group_id: PG000004
+
+  # Packaging
+  - category_id: PACK-PRI
+    category_name: Primary
+    level: 2
+    parent_category_id: PACK
+    owner_purch_group_id: PG000005
+
+  - category_id: PACK-SEC
+    category_name: Secondary
+    level: 2
+    parent_category_id: PACK
+    owner_purch_group_id: PG000005
+
+  - category_id: PACK-LBL
+    category_name: Labeling
+    level: 2
+    parent_category_id: PACK
+    owner_purch_group_id: PG000005
+
+  # Services
+  - category_id: SRVC-TECH
+    category_name: Technical
+    level: 2
+    parent_category_id: SRVC
+    owner_purch_group_id: PG000006
+
+  - category_id: SRVC-LOG
+    category_name: Logistics
+    level: 2
+    parent_category_id: SRVC
+    owner_purch_group_id: PG000006
+
+  - category_id: SRVC-SW
+    category_name: Software
+    level: 2
+    parent_category_id: SRVC
+    owner_purch_group_id: PG000006
+
+  # MRO
+  - category_id: MRO-FAC
+    category_name: Facility
+    level: 2
+    parent_category_id: MRO
+    owner_purch_group_id: PG000006
+
+  - category_id: MRO-TOOL
+    category_name: Tools
+    level: 2
+    parent_category_id: MRO
+    owner_purch_group_id: PG000006
+
+  # Level 3: Commodities (leaf nodes)
+  # Electronics - Compute
+  - category_id: ELEC-COMP-MCU
+    category_name: Microcontrollers
+    level: 3
+    parent_category_id: ELEC-COMP
+    owner_purch_group_id: PG000001
+
+  - category_id: ELEC-COMP-SBC
+    category_name: Industrial SBC
+    level: 3
+    parent_category_id: ELEC-COMP
+    owner_purch_group_id: PG000001
+
+  - category_id: ELEC-COMP-FPGA
+    category_name: FPGA Modules
+    level: 3
+    parent_category_id: ELEC-COMP
+    owner_purch_group_id: PG000001
+
+  # Electronics - PCB
+  - category_id: ELEC-PCB-BARE
+    category_name: Bare PCBs
+    level: 3
+    parent_category_id: ELEC-PCB
+    owner_purch_group_id: PG000001
+
+  - category_id: ELEC-PCB-PCBA
+    category_name: "PCB Assemblies (PCBA)"
+    level: 3
+    parent_category_id: ELEC-PCB
+    owner_purch_group_id: PG000001
+
+  # Electronics - Sensors
+  - category_id: ELEC-SENS-LIDAR2D
+    category_name: 2D LiDAR
+    level: 3
+    parent_category_id: ELEC-SENS
+    owner_purch_group_id: PG000001
+
+  - category_id: ELEC-SENS-CAM3D
+    category_name: 3D Depth Camera
+    level: 3
+    parent_category_id: ELEC-SENS
+    owner_purch_group_id: PG000001
+
+  - category_id: ELEC-SENS-IMU
+    category_name: IMU
+    level: 3
+    parent_category_id: ELEC-SENS
+    owner_purch_group_id: PG000001
+
+  - category_id: ELEC-SENS-ENCODER
+    category_name: Wheel Encoders
+    level: 3
+    parent_category_id: ELEC-SENS
+    owner_purch_group_id: PG000001
+
+  - category_id: ELEC-SENS-ULTRA
+    category_name: Ultrasonic Sensors
+    level: 3
+    parent_category_id: ELEC-SENS
+    owner_purch_group_id: PG000001
+
+  - category_id: ELEC-SENS-SAFETY
+    category_name: Safety Sensors
+    level: 3
+    parent_category_id: ELEC-SENS
+    owner_purch_group_id: PG000001
+
+  # Electronics - Connectivity
+  - category_id: ELEC-CONN-WIFI
+    category_name: "WiFi / BT Modules"
+    level: 3
+    parent_category_id: ELEC-CONN
+    owner_purch_group_id: PG000001
+
+  - category_id: ELEC-CONN-ETH
+    category_name: Ethernet Modules
+    level: 3
+    parent_category_id: ELEC-CONN
+    owner_purch_group_id: PG000001
+
+  - category_id: ELEC-CONN-IO
+    category_name: IO Modules
+    level: 3
+    parent_category_id: ELEC-CONN
+    owner_purch_group_id: PG000001
+
+  # Motion - Motors
+  - category_id: MOTN-MOT-BLDC
+    category_name: BLDC Motors
+    level: 3
+    parent_category_id: MOTN-MOT
+    owner_purch_group_id: PG000002
+
+  - category_id: MOTN-MOT-STEP
+    category_name: Stepper Motors
+    level: 3
+    parent_category_id: MOTN-MOT
+    owner_purch_group_id: PG000002
+
+  # Motion - Drive Train
+  - category_id: MOTN-DRV-GBOX
+    category_name: Gearboxes
+    level: 3
+    parent_category_id: MOTN-DRV
+    owner_purch_group_id: PG000002
+
+  - category_id: MOTN-DRV-WHEEL
+    category_name: Drive Wheels
+    level: 3
+    parent_category_id: MOTN-DRV
+    owner_purch_group_id: PG000002
+
+  - category_id: MOTN-DRV-CASTER
+    category_name: Caster Wheels
+    level: 3
+    parent_category_id: MOTN-DRV
+    owner_purch_group_id: PG000002
+
+  - category_id: MOTN-DRV-BEARING
+    category_name: Bearings
+    level: 3
+    parent_category_id: MOTN-DRV
+    owner_purch_group_id: PG000002
+
+  # Motion - Actuators
+  - category_id: MOTN-ACT-LINEAR
+    category_name: Linear Actuators
+    level: 3
+    parent_category_id: MOTN-ACT
+    owner_purch_group_id: PG000002
+
+  - category_id: MOTN-ACT-GRIP
+    category_name: Grippers
+    level: 3
+    parent_category_id: MOTN-ACT
+    owner_purch_group_id: PG000002
+
+  # Motion - Transmission
+  - category_id: MOTN-TRN-BELT
+    category_name: "Belts & Pulleys"
+    level: 3
+    parent_category_id: MOTN-TRN
+    owner_purch_group_id: PG000002
+
+  # Power - Batteries
+  - category_id: POWR-BAT-CELL
+    category_name: Li-ion Cells
+    level: 3
+    parent_category_id: POWR-BAT
+    owner_purch_group_id: PG000003
+
+  - category_id: POWR-BAT-PACK
+    category_name: Battery Packs
+    level: 3
+    parent_category_id: POWR-BAT
+    owner_purch_group_id: PG000003
+
+  - category_id: POWR-BAT-BMS
+    category_name: BMS
+    level: 3
+    parent_category_id: POWR-BAT
+    owner_purch_group_id: PG000003
+
+  # Power - Charging
+  - category_id: POWR-CHG-UNIT
+    category_name: Chargers
+    level: 3
+    parent_category_id: POWR-CHG
+    owner_purch_group_id: PG000003
+
+  - category_id: POWR-CHG-CONTACT
+    category_name: Charging Contacts
+    level: 3
+    parent_category_id: POWR-CHG
+    owner_purch_group_id: PG000003
+
+  # Power - Conversion
+  - category_id: POWR-CNV-DCDC
+    category_name: DC-DC Converters
+    level: 3
+    parent_category_id: POWR-CNV
+    owner_purch_group_id: PG000003
+
+  - category_id: POWR-CNV-PDU
+    category_name: Power Distribution
+    level: 3
+    parent_category_id: POWR-CNV
+    owner_purch_group_id: PG000003
+
+  # Mechanical - Structural
+  - category_id: MECH-STR-SHEET
+    category_name: Sheet Metal Parts
+    level: 3
+    parent_category_id: MECH-STR
+    owner_purch_group_id: PG000004
+
+  - category_id: MECH-STR-EXTR
+    category_name: Aluminum Extrusions
+    level: 3
+    parent_category_id: MECH-STR
+    owner_purch_group_id: PG000004
+
+  - category_id: MECH-STR-BRACKET
+    category_name: "Brackets & Mounts"
+    level: 3
+    parent_category_id: MECH-STR
+    owner_purch_group_id: PG000004
+
+  # Mechanical - Fasteners
+  - category_id: MECH-FST-SCREW
+    category_name: "Screws & Bolts"
+    level: 3
+    parent_category_id: MECH-FST
+    owner_purch_group_id: PG000004
+
+  - category_id: MECH-FST-NUT
+    category_name: "Nuts & Washers"
+    level: 3
+    parent_category_id: MECH-FST
+    owner_purch_group_id: PG000004
+
+  # Mechanical - Wire & Cable
+  - category_id: MECH-WIR-CABLE
+    category_name: Cable Assemblies
+    level: 3
+    parent_category_id: MECH-WIR
+    owner_purch_group_id: PG000004
+
+  # Packaging - Primary
+  - category_id: PACK-PRI-CARTON
+    category_name: "Cartons & Boxes"
+    level: 3
+    parent_category_id: PACK-PRI
+    owner_purch_group_id: PG000005
+
+  - category_id: PACK-PRI-FOAM
+    category_name: Foam Inserts
+    level: 3
+    parent_category_id: PACK-PRI
+    owner_purch_group_id: PG000005
+
+  # Packaging - Secondary
+  - category_id: PACK-SEC-PALLET
+    category_name: "Pallets & Wrapping"
+    level: 3
+    parent_category_id: PACK-SEC
+    owner_purch_group_id: PG000005
+
+  # Packaging - Labeling
+  - category_id: PACK-LBL-PRODUCT
+    category_name: Product Labels
+    level: 3
+    parent_category_id: PACK-LBL
+    owner_purch_group_id: PG000005
+
+  - category_id: PACK-LBL-SHIP
+    category_name: Shipping Labels
+    level: 3
+    parent_category_id: PACK-LBL
+    owner_purch_group_id: PG000005
+
+  # Services - Technical
+  - category_id: SRVC-TECH-CALIB
+    category_name: Calibration Services
+    level: 3
+    parent_category_id: SRVC-TECH
+    owner_purch_group_id: PG000006
+
+  - category_id: SRVC-TECH-TEST
+    category_name: "Testing & Certification"
+    level: 3
+    parent_category_id: SRVC-TECH
+    owner_purch_group_id: PG000006
+
+  # Services - Logistics
+  - category_id: SRVC-LOG-FREIGHT
+    category_name: "Freight & Shipping"
+    level: 3
+    parent_category_id: SRVC-LOG
+    owner_purch_group_id: PG000006
+
+  - category_id: SRVC-LOG-CUSTOMS
+    category_name: Customs Brokerage
+    level: 3
+    parent_category_id: SRVC-LOG
+    owner_purch_group_id: PG000006
+
+  # Services - Software
+  - category_id: SRVC-SW-LICENSE
+    category_name: Software Licenses
+    level: 3
+    parent_category_id: SRVC-SW
+    owner_purch_group_id: PG000006
+
+  # MRO - Facility
+  - category_id: MRO-FAC-CLEAN
+    category_name: Cleaning Supplies
+    level: 3
+    parent_category_id: MRO-FAC
+    owner_purch_group_id: PG000006
+
+  - category_id: MRO-FAC-SAFETY
+    category_name: Safety Equipment
+    level: 3
+    parent_category_id: MRO-FAC
+    owner_purch_group_id: PG000006
+
+  # MRO - Tools
+  - category_id: MRO-TOOL-HAND
+    category_name: Hand Tools
+    level: 3
+    parent_category_id: MRO-TOOL
+    owner_purch_group_id: PG000006
+
+  - category_id: MRO-TOOL-POWER
+    category_name: Power Tools
+    level: 3
+    parent_category_id: MRO-TOOL
+    owner_purch_group_id: PG000006
