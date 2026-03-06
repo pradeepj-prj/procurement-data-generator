@@ -166,10 +166,19 @@ class VendorGenerator(BaseGenerator):
                 status = "ACTIVE"
 
             # Scores
-            risk = random.randint(10, 85)
             quality = random.randint(60, 98)
             otd = to_decimal(random.uniform(75.0, 99.0))
             esg = random.randint(40, 95) if random.random() > 0.2 else None
+
+            ml = self.config.ml_signal
+            if ml.enabled:
+                corr = ml.vendor_score_correlation
+                noise_std = ml.vendor_score_noise_std
+                correlated_risk = 100 - quality + random.gauss(0, noise_std)
+                independent_risk = random.randint(10, 85)
+                risk = int(max(10, min(85, corr * correlated_risk + (1 - corr) * independent_risk)))
+            else:
+                risk = random.randint(10, 85)
 
             if status == "CONDITIONAL":
                 quality = random.randint(55, 72)

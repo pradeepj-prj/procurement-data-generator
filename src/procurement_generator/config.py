@@ -10,12 +10,25 @@ import yaml
 
 
 @dataclass
+class MLSignalConfig:
+    enabled: bool = False
+    # 1a: Vendor score correlations
+    vendor_score_correlation: float = 0.7
+    vendor_score_noise_std: float = 10.0
+    # 1b: Invoice variance ~ vendor quality
+    invoice_quality_influence: float = 0.5
+    invoice_base_match_rate: float = 0.82
+    invoice_variance_scale: float = 0.08
+
+
+@dataclass
 class ScaleConfig:
     scale: int = 1
     demo_reference_date: date = date(2025, 9, 15)
     time_window_start: date = date(2024, 4, 1)
     time_window_end: date = date(2025, 9, 30)
     random_seed: int = 42
+    ml_signal: MLSignalConfig = field(default_factory=MLSignalConfig)
 
     # Scaled targets
     @property
@@ -85,6 +98,17 @@ def load_config(seeds_dir: Path) -> ScaleConfig:
         cfg.time_window_end = datetime.strptime(end, "%Y-%m-%d").date()
     elif isinstance(end, date):
         cfg.time_window_end = end
+
+    ml = data.get("ml_signal", {})
+    if ml:
+        cfg.ml_signal = MLSignalConfig(
+            enabled=ml.get("enabled", False),
+            vendor_score_correlation=ml.get("vendor_score_correlation", 0.7),
+            vendor_score_noise_std=ml.get("vendor_score_noise_std", 10.0),
+            invoice_quality_influence=ml.get("invoice_quality_influence", 0.5),
+            invoice_base_match_rate=ml.get("invoice_base_match_rate", 0.82),
+            invoice_variance_scale=ml.get("invoice_variance_scale", 0.08),
+        )
 
     return cfg
 

@@ -3,3 +3,16 @@ demo_reference_date: "2025-09-15"
 time_window_start: "2024-04-01"
 time_window_end: "2025-09-30"
 random_seed: 42
+
+# ML signal enrichment (tune these to control difficulty)
+ml_signal:
+  enabled: true                         # false = original trivially-separable behavior
+
+  # 1a: Vendor score correlations
+  vendor_score_correlation: 0.7         # 0.0 = independent (original), 1.0 = perfectly correlated
+  vendor_score_noise_std: 10            # Gaussian noise std on risk = 100 - quality + noise
+
+  # 1b: Invoice variance driven by vendor quality
+  invoice_quality_influence: 0.5        # 0.0 = original fixed rates, 1.0 = fully quality-driven
+  invoice_base_match_rate: 0.82         # Base full-match probability
+  invoice_variance_scale: 0.08          # Max variance std for lowest-quality vendor

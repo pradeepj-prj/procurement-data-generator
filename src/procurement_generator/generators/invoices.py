@@ -100,12 +100,24 @@ class InvoiceGenerator(BaseGenerator):
             inv_date = gr.gr_date + timedelta(days=random.randint(1, 5))
 
             # Match status distribution
+            vendor = self.store.vendor_by_id(po.vendor_id)
+            ml = self.config.ml_signal
+
+            if ml.enabled and vendor:
+                quality_factor = vendor.quality_score / 100.0
+                influence = ml.invoice_quality_influence
+                base = ml.invoice_base_match_rate
+                adjusted_rate = base * (1.0 - influence * (1.0 - quality_factor))
+                match_rate = max(0.50, min(0.95, adjusted_rate))
+            else:
+                match_rate = 0.82
+
             r = random.random()
-            if r < 0.82:
+            if r < match_rate:
                 match_type = "FULL_MATCH"
-            elif r < 0.92:
+            elif r < match_rate + (1 - match_rate) * 0.55:
                 match_type = "PRICE_VARIANCE"
-            elif r < 0.97:
+            elif r < match_rate + (1 - match_rate) * 0.83:
                 match_type = "QUANTITY_VARIANCE"
             else:
                 match_type = "BOTH_VARIANCE"
@@ -115,7 +127,15 @@ class InvoiceGenerator(BaseGenerator):
                 gr_line = self._find_gr_line(gr.gr_id, po.po_id, pol.po_line_number)
 
                 if match_type == "PRICE_VARIANCE" or match_type == "BOTH_VARIANCE":
-                    price_var = random.uniform(0.03, 0.12) * (1 if random.random() > 0.3 else -1)
+                    if ml.enabled and vendor:
+                        quality_factor = vendor.quality_score / 100.0
+                        var_scale = ml.invoice_variance_scale * (1.0 - quality_factor)
+                        price_var = random.gauss(0, max(0.01, var_scale))
+                        price_var = max(-0.15, min(0.15, price_var))
+                        if abs(price_var) < 0.005:
+                            price_var = 0.03 * (1 if random.random() > 0.5 else -1)
+                    else:
+                        price_var = random.uniform(0.03, 0.12) * (1 if random.random() > 0.3 else -1)
                     price_invoiced = to_decimal(float(pol.unit_price) * (1 + price_var))
                 else:
                     price_invoiced = pol.unit_price
