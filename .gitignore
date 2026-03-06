@@ -1,6 +1,10 @@
 # Output
 output/
 
+# Secrets
+.env
+*.pem
+
 # Python
 __pycache__/
 *.pyc

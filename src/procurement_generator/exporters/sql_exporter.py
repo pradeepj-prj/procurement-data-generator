@@ -32,16 +32,16 @@ FIELD_TYPES = {
     "plant_name": "VARCHAR(100)",
     "city": "VARCHAR(50)",
     "function": "VARCHAR(50)",
-    "storage_loc_id": "VARCHAR(8)",
+    "storage_loc_id": "VARCHAR(12)",
     "storage_loc_name": "VARCHAR(100)",
     "storage_type": "VARCHAR(30)",
-    "cost_center_id": "VARCHAR(10)",
+    "cost_center_id": "VARCHAR(16)",
     "cost_center_name": "VARCHAR(100)",
     "department": "VARCHAR(50)",
-    "category_id": "VARCHAR(12)",
+    "category_id": "VARCHAR(20)",
     "category_name": "VARCHAR(100)",
     "level": "INTEGER",
-    "parent_category_id": "VARCHAR(12)",
+    "parent_category_id": "VARCHAR(20)",
     "owner_purch_group_id": "VARCHAR(8)",
     "material_id": "VARCHAR(12)",
     "description": "VARCHAR(200)",
@@ -61,7 +61,7 @@ FIELD_TYPES = {
     "legal_name": "VARCHAR(200)",
     "country_of_incorporation": "VARCHAR(2)",
     "registration_id": "VARCHAR(30)",
-    "vendor_id": "VARCHAR(12)",
+    "vendor_id": "VARCHAR(20)",
     "vendor_name": "VARCHAR(200)",
     "vendor_type": "VARCHAR(20)",
     "supported_categories": "VARCHAR(200)",
@@ -73,7 +73,7 @@ FIELD_TYPES = {
     "quality_score": "INTEGER",
     "risk_score": "INTEGER",
     "esg_score": "INTEGER",
-    "status": "VARCHAR(20)",
+    "status": "VARCHAR(30)",
     "bank_account": "VARCHAR(40)",
     "alias_group": "VARCHAR(20)",
     "address_type": "VARCHAR(20)",
@@ -83,7 +83,7 @@ FIELD_TYPES = {
     "contact_id": "VARCHAR(12)",
     "contact_name": "VARCHAR(100)",
     "email": "VARCHAR(100)",
-    "phone": "VARCHAR(20)",
+    "phone": "VARCHAR(30)",
     "role": "VARCHAR(50)",
     "preferred_rank": "INTEGER",
     "contract_covered_flag": "BOOLEAN",
@@ -168,7 +168,7 @@ FIELD_TYPES = {
     "payment_terms_applied": "VARCHAR(20)",
     "early_payment_discount": "DECIMAL(12,2)",
     "amount_applied": "DECIMAL(14,2)",
-    "storage_loc_id": "VARCHAR(8)",
+    "storage_loc_id": "VARCHAR(12)",
 }
 
 
@@ -227,7 +227,7 @@ def export_sql(store, output_dir: Path) -> dict[str, int]:
             col_defs = []
             for ef in entity_fields:
                 sql_type = _get_sql_type(ef.name, str(ef.type))
-                nullable = "typing.Optional" in str(ef.type) or ef.name.endswith("_id") is False
+                nullable = "Optional" in str(ef.type) or ef.name.endswith("_id") is False
                 null_str = "" if nullable else " NOT NULL"
                 col_defs.append(f"    {ef.name} {sql_type}{null_str}")
             f.write(",\n".join(col_defs))
