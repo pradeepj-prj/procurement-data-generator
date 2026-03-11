@@ -21,6 +21,15 @@ python -m procurement_generator --scale 1 --seeds-dir seeds --output-dir output
 # Run tests
 pytest tests/
 
+# Install HANA Cloud driver
+pip install -e ".[hana]"
+
+# Deploy to HANA Cloud (reads .env)
+python scripts/deploy_to_hana.py
+
+# Deploy dry-run
+python scripts/deploy_to_hana.py --dry-run
+
 # Install ML dependencies
 pip install -e ".[ml]"
 
@@ -32,7 +41,7 @@ python train.py --data-source csv --csv-dir ../../../output/csv --n-trials 50
 python -m ml.uc_02_invoice_match.inference.serve --model ml/uc_02_invoice_match/training/best_model.joblib --csv-dir output/csv
 ```
 
-Output goes to `output/csv/`, `output/sql/`, and `output/postgres/`.
+Output goes to `output/csv/`, `output/sql/`, `output/postgres/`, and `output/hana/`.
 
 ## Architecture
 
@@ -42,7 +51,7 @@ Output goes to `output/csv/`, `output/sql/`, and `output/postgres/`.
 - **Seeds**: YAML files in `seeds/` anchor 12 demo scenarios with exact attribute values
 - **Generators**: `generators/` — seed-first, then bulk fill to scale targets
 - **Validators**: `validators/` — structural integrity (FK), business rules, seed verification, statistical distribution
-- **Exporters**: `exporters/` — CSV (one per table), SQL (DDL + batch INSERT, HANA-compatible), and Postgres (schema-qualified DDL + INSERT with PKs)
+- **Exporters**: `exporters/` — CSV (one per table), SQL (DDL + batch INSERT), Postgres (schema-qualified DDL + INSERT with PKs), and HANA Cloud (schema-qualified DDL with safe DROP blocks + monolithic load script)
 
 Key generation order: org → categories → materials → legal entities → vendors → contracts → source list → confidentiality propagation → PRs → POs → GRs → invoices → payments → reconciliation.
 
@@ -61,6 +70,8 @@ Key generation order: org → categories → materials → legal entities → ve
 | `ml/uc_02_invoice_match/feature_engineering/feature_functions.py` | UC-02 feature pipeline with LOO and leakage guards |
 | `ml/uc_02_invoice_match/training/train.py` | 4-model training (LR, RF, XGBoost, LightGBM) with Optuna + MLflow |
 | `ml/uc_02_invoice_match/inference/serve.py` | Inference predictor with batch scoring and feature explanations |
+| `src/procurement_generator/exporters/hana_exporter.py` | HANA Cloud SQL exporter |
+| `scripts/deploy_to_hana.py` | HANA Cloud deploy script (hdbcli) |
 
 ## ML Use Cases
 
@@ -124,34 +135,32 @@ pip install -e ".[ml]"
 
 ## Deployment
 
-### EC2 Instance & Postgres Database
+### Configuration
 
-Connection details (IP, SSH key, DB credentials) are stored in `.env` (not committed). Copy `.env.example` to `.env` and fill in real values:
+Connection details for both HANA Cloud and EC2 Postgres are stored in `.env` (not committed). Copy `.env.example` to `.env` and fill in real values:
 
 ```bash
 cp .env.example .env
-# Edit .env with your EC2 IP, SSH key path, DB password, etc.
+# Edit .env with your connection details
 ```
 
-Default database settings: DB `procurement_demo`, schema `procurement`, user `procurement_user`, port `5432`.
+**HANA Cloud**: `HANA_HOST`, `HANA_PORT` (443), `HANA_USER` (DBADMIN), `HANA_PASSWORD`, `HANA_SCHEMA` (PROCUREMENT).
+
+**EC2 Postgres**: `EC2_IP`, `SSH_KEY`, `SSH_USER` (ubuntu), `DB_NAME` (procurement_demo), `DB_USER` (procurement_user), `DB_PASSWORD`, `DB_SCHEMA` (procurement), `DB_PORT` (5432).
 
 ### Data Pipeline
 
 ```bash
-# 1. Generate data (includes Postgres SQL export)
+# 1. Generate data (all exports: CSV, SQL, Postgres, HANA Cloud)
 python -m procurement_generator --scale 1
 
-# 2. Deploy to EC2 (reads connection details from .env)
-bash scripts/deploy_to_ec2.sh
+# 2. Deploy to HANA Cloud
+python scripts/deploy_to_hana.py          # real deploy
+python scripts/deploy_to_hana.py --dry-run # preview only
 
-# 3. Dry-run (prints commands without executing)
-bash scripts/deploy_to_ec2.sh --dry-run
-```
-
-Manual deployment:
-```bash
-scp -i $SSH_KEY -r output/postgres/ $SSH_USER@$EC2_IP:/tmp/procurement_load/
-ssh -i $SSH_KEY $SSH_USER@$EC2_IP "cd /tmp/procurement_load && sudo -u postgres psql -d $DB_NAME -f _load_all.sql"
+# 3. Deploy to EC2 Postgres
+bash scripts/deploy_to_ec2.sh             # real deploy
+bash scripts/deploy_to_ec2.sh --dry-run   # preview only
 ```
 
 ### Export Formats
@@ -159,6 +168,7 @@ ssh -i $SSH_KEY $SSH_USER@$EC2_IP "cd /tmp/procurement_load && sudo -u postgres 
 | Format | Output Path | Notes |
 |--------|------------|-------|
 | CSV | `output/csv/` | One file per table, standard CSV |
-| HANA SQL | `output/sql/` | DDL + batch INSERT, SAP HANA compatible |
+| HANA SQL (basic) | `output/sql/` | DDL + batch INSERT, no schema prefix |
+| HANA Cloud SQL | `output/hana/` | Schema-qualified DDL with PKs, safe DROP blocks, `_load_all_hana.sql` monolithic script |
 | Postgres SQL | `output/postgres/` | Schema-qualified DDL with PKs + `_load_all.sql` master script |
 

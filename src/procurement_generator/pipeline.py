@@ -25,6 +25,7 @@ from .validators.statistical import validate_distributions
 from .exporters.csv_exporter import export_csv
 from .exporters.sql_exporter import export_sql
 from .exporters.postgres_exporter import export_postgres
+from .exporters.hana_exporter import export_hana_cloud
 
 
 class Pipeline:
@@ -272,20 +273,24 @@ class Pipeline:
         csv_dir = self.output_dir / "csv"
         sql_dir = self.output_dir / "sql"
         pg_dir = self.output_dir / "postgres"
+        hana_dir = self.output_dir / "hana"
 
         csv_counts = export_csv(self.store, csv_dir)
         sql_counts = export_sql(self.store, sql_dir)
         pg_counts = export_postgres(self.store, pg_dir)
+        hana_counts = export_hana_cloud(self.store, hana_dir)
 
         total_csv = sum(csv_counts.values())
         total_sql = sum(sql_counts.values())
         total_pg = sum(pg_counts.values())
+        total_hana = sum(hana_counts.values())
 
         return [ValidationResult(
             "Export complete", "FATAL", True,
             f"CSV: {total_csv} rows across {len(csv_counts)} tables to {csv_dir}\n"
             f"    SQL: {total_sql} rows across {len(sql_counts)} tables to {sql_dir}\n"
-            f"    Postgres: {total_pg} rows across {len(pg_counts)} tables to {pg_dir}",
+            f"    Postgres: {total_pg} rows across {len(pg_counts)} tables to {pg_dir}\n"
+            f"    HANA Cloud: {total_hana} rows across {len(hana_counts)} tables to {hana_dir}",
             [],
         )]
 

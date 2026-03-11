@@ -172,6 +172,73 @@ FIELD_TYPES = {
 }
 
 
+# Primary key definitions for each table (database-agnostic)
+PRIMARY_KEYS = {
+    "company_code": ["company_code"],
+    "purchasing_org": ["purch_org_id"],
+    "purchasing_group": ["purch_group_id"],
+    "purchasing_group_category": ["purch_group_id", "category_id"],
+    "plant": ["plant_id"],
+    "storage_location": ["plant_id", "storage_loc_id"],
+    "cost_center": ["cost_center_id"],
+    "category_hierarchy": ["category_id"],
+    "material_master": ["material_id"],
+    "material_plant_extension": ["material_id", "plant_id"],
+    "legal_entity": ["legal_entity_id"],
+    "vendor_master": ["vendor_id"],
+    "vendor_category": ["vendor_id", "category_id"],
+    "vendor_address": ["vendor_id", "address_type"],
+    "vendor_contact": ["contact_id"],
+    "source_list": ["material_id", "vendor_id", "plant_id"],
+    "contract_header": ["contract_id"],
+    "contract_item": ["contract_id", "item_number"],
+    "uom_conversion": ["material_id", "from_uom", "to_uom"],
+    "pr_header": ["pr_id"],
+    "pr_line_item": ["pr_id", "pr_line_number"],
+    "po_header": ["po_id"],
+    "po_line_item": ["po_id", "po_line_number"],
+    "gr_header": ["gr_id"],
+    "gr_line_item": ["gr_id", "gr_line_number"],
+    "invoice_header": ["invoice_id"],
+    "invoice_line_item": ["invoice_id", "invoice_line_number"],
+    "payment": ["payment_id"],
+    "payment_invoice_link": ["payment_id", "invoice_id"],
+}
+
+# FK-safe table ordering (matches pipeline generation order)
+TABLE_ORDER = [
+    "company_code",
+    "purchasing_org",
+    "purchasing_group",
+    "purchasing_group_category",
+    "plant",
+    "storage_location",
+    "cost_center",
+    "category_hierarchy",
+    "material_master",
+    "material_plant_extension",
+    "legal_entity",
+    "vendor_master",
+    "vendor_category",
+    "vendor_address",
+    "vendor_contact",
+    "source_list",
+    "contract_header",
+    "contract_item",
+    "uom_conversion",
+    "pr_header",
+    "pr_line_item",
+    "po_header",
+    "po_line_item",
+    "gr_header",
+    "gr_line_item",
+    "invoice_header",
+    "invoice_line_item",
+    "payment",
+    "payment_invoice_link",
+]
+
+
 def _sql_value(val: Any) -> str:
     """Convert a Python value to a SQL literal."""
     if val is None:

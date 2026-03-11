@@ -2,7 +2,11 @@
 
 ## Overview
 
-This document covers deploying the generated procurement data to a Postgres instance on EC2. It includes setup instructions, the automated deployment script, and lessons learned from the initial deployment.
+This document covers deploying the generated procurement data to:
+- **SAP HANA Cloud** on BTP (via Python `hdbcli` driver)
+- **PostgreSQL** on EC2 (via SSH + psql)
+
+It includes setup instructions, automated deployment scripts, and lessons learned.
 
 ## Prerequisites
 
@@ -76,8 +80,72 @@ The generator produces three export formats in every run:
 | Format | Output Path | Target | Notes |
 |--------|------------|--------|-------|
 | CSV | `output/csv/` | Any system | One file per table, standard RFC 4180 CSV |
-| HANA SQL | `output/sql/` | SAP HANA Cloud | DDL + batch INSERT, no schema prefix |
+| HANA SQL (basic) | `output/sql/` | SAP HANA Cloud | DDL + batch INSERT, no schema prefix |
+| HANA Cloud SQL | `output/hana/` | SAP HANA Cloud on BTP | Schema-qualified DDL with PKs, safe DROP blocks, `_load_all_hana.sql` monolithic script |
 | Postgres SQL | `output/postgres/` | PostgreSQL 14+ | Schema-qualified DDL with PKs, `DROP CASCADE`, `_load_all.sql` master script |
+
+## SAP HANA Cloud Deployment
+
+### Prerequisites
+
+1. SAP BTP cockpit -> HANA Cloud -> Create Instance
+2. Note the SQL endpoint hostname (e.g., `xxxxxxxx.hana.trial-us10.hanacloud.ondemand.com`)
+3. Set DBADMIN password during provisioning
+4. Enable "Allow all IP addresses" in the instance's allowed connections (or add your IP)
+5. Install the HANA driver: `pip install -e ".[hana]"`
+
+### Configuration
+
+Add HANA Cloud variables to `.env`:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `HANA_HOST` | *(required)* | HANA Cloud SQL endpoint hostname |
+| `HANA_PORT` | `443` | HANA Cloud SQL port |
+| `HANA_USER` | `DBADMIN` | Database user |
+| `HANA_PASSWORD` | *(required)* | Database password |
+| `HANA_SCHEMA` | `PROCUREMENT` | Schema name (uppercase) |
+
+### Automated Deployment
+
+```bash
+# 1. Generate data (includes HANA Cloud export)
+python -m procurement_generator --scale 1
+
+# 2. Preview what will happen
+python scripts/deploy_to_hana.py --dry-run
+
+# 3. Deploy
+python scripts/deploy_to_hana.py
+```
+
+The script performs 4 steps:
+1. **Connect** — Establishes encrypted connection to HANA Cloud via `hdbcli`
+2. **Schema** — Creates the `PROCUREMENT` schema (idempotent, handles error code 386)
+3. **Load** — Executes each table's SQL file in FK-safe order (DROP + CREATE + INSERT)
+4. **Verify** — Queries `M_TABLES` for row counts per table
+
+### HANA Cloud SQL Details
+
+Each table file in `output/hana/` contains:
+- Safe DROP via anonymous block (error code 259 = table not found):
+  ```sql
+  DO BEGIN
+    DECLARE EXIT HANDLER FOR SQL_ERROR_CODE 259 BEGIN END;
+    DROP TABLE "PROCUREMENT"."table_name" CASCADE;
+  END;
+  ```
+- `CREATE TABLE "PROCUREMENT"."table_name" (...)` — with column types, NOT NULL constraints, and a `PRIMARY KEY` clause
+- `INSERT INTO` statements in batches of 100 rows
+
+The `_load_all_hana.sql` monolithic script concatenates all table SQL in FK-safe order (HANA has no `\i` include command).
+
+### Manual Deployment
+
+Using `hdbsql` (SAP HANA client CLI):
+```bash
+hdbsql -n $HANA_HOST:$HANA_PORT -u $HANA_USER -p $HANA_PASSWORD -I output/hana/_load_all_hana.sql
+```
 
 ## Postgres SQL Details
 
