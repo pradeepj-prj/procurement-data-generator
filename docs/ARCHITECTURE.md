@@ -156,11 +156,12 @@ Seeds (YAML) ──> Generators ──> DataStore ──> Validators ──> Exp
 | SQL (Postgres) | Custom DDL generator |
 | Database | PostgreSQL 16 on EC2 (Ubuntu) |
 | Deployment | Bash + SSH/SCP |
-| ML (planned) | pandas, scikit-learn, XGBoost, LightGBM, MLflow, Optuna |
+| ML pipeline | pandas, scikit-learn, XGBoost, LightGBM, MLflow, Optuna |
+| ML containers | Docker (SAP AI Core compatible) |
 
-## Future Architecture (Planned)
+## ML Pipeline Architecture
 
-As ML use cases are developed, the architecture will expand:
+UC-02 (Invoice Three-Way Match) is fully implemented. The remaining 12 use cases follow the same pattern.
 
 ```
                     ┌──────────────────────────────────┐
@@ -182,4 +183,33 @@ As ML use cases are developed, the architecture will expand:
                                         (containers)  (tracking)
 ```
 
-See `docs/ML_USE_CASES.md` for the 13 planned use cases and `CLAUDE.md` for ML folder conventions.
+### ML Module Structure
+
+```
+ml/
+  common/
+    db_config.py              # Dual CSV/Postgres data loader
+    feature_store.py          # Shared feature groups (vendor profile, performance, invoice behavior, price benchmarks)
+    utils.py                  # Ordinal maps, currency conversion
+  data_processing/
+    sql/
+      uc02_preprocessing.sql  # Postgres-based preprocessing
+      feature_store_views.sql # Materialized views for feature store
+    python/
+      uc02_preprocessing.py   # Pandas-based table joins + temporal features
+  uc_02_invoice_match/
+    exploration/              # EDA notebook
+    feature_engineering/      # Notebook + standalone .py copy
+    training/                 # train.py + config.yaml + Dockerfile
+    inference/                # serve.py + Dockerfile
+```
+
+**Key design decisions:**
+- **Leave-one-out (LOO)**: Vendor invoice behavior features exclude the current invoice during training to prevent leakage; full history used at inference
+- **Dual preprocessing**: SQL and Python implementations for each use case, either can be used
+- **Shared feature store**: `ml/common/feature_store.py` computes vendor profile, historical performance, invoice behavior, and price benchmarks — reusable across use cases
+- **Leakage guards**: Explicit `LEAKAGE_COLUMNS` list in feature functions prevents target-correlated fields from entering the feature matrix
+- **4-model comparison**: Logistic Regression (baseline), Random Forest, XGBoost + Optuna, LightGBM + Optuna
+- **SAP AI Core containers**: Training and inference Dockerfiles follow the SAP AI Core containerization pattern
+
+See `docs/ML_USE_CASES.md` for the 13 use cases and `CLAUDE.md` for ML folder conventions.

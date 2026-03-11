@@ -14,6 +14,10 @@ dist/
 build/
 .eggs/
 
+# ML artifacts
+mlruns/
+*.joblib
+
 # Virtual environments
 .venv/
 venv/

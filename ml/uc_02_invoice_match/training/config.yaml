@@ -1,0 +1,51 @@
+# UC-02 Invoice Three-Way Match — Training Configuration
+
+experiment_name: uc02_invoice_match
+target: binary            # "binary" (FULL_MATCH vs ANY_VARIANCE) or "multiclass"
+data_source: csv          # "csv" or "postgres"
+csv_dir: ../../../output/csv
+
+# Cross-validation
+cv:
+  n_splits: 5
+  n_repeats: 3
+  random_state: 42
+
+# Primary metric for model selection
+primary_metric: f1
+
+# Optuna hyperparameter tuning
+optuna:
+  n_trials: 50
+  timeout: 600            # seconds
+  direction: maximize
+
+# Model defaults
+models:
+  logistic_regression:
+    class_weight: balanced
+    max_iter: 1000
+    solver: lbfgs
+
+  random_forest:
+    n_estimators: 100
+    class_weight: balanced
+    random_state: 42
+
+  xgboost:
+    # Search space defined in notebook; these are fallback defaults
+    n_estimators: 100
+    max_depth: 4
+    learning_rate: 0.1
+    subsample: 0.8
+    colsample_bytree: 0.8
+    random_state: 42
+    eval_metric: logloss
+
+  lightgbm:
+    n_estimators: 100
+    num_leaves: 31
+    learning_rate: 0.1
+    is_unbalance: true
+    random_state: 42
+    verbose: -1

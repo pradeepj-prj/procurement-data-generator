@@ -68,3 +68,39 @@
 - [x] Maverick PO %: 6% (target 5-8%)
 - [x] Invoice match rate: 81% (target 80-85%)
 - [x] ~10,600 total rows across 29 tables
+
+## ML Infrastructure
+- [x] Dual data loader — CSV and Postgres (`ml/common/db_config.py`)
+- [x] Shared feature store — vendor profile, performance, invoice behavior, price benchmarks (`ml/common/feature_store.py`)
+- [x] Utility maps — ordinal encodings, currency conversion (`ml/common/utils.py`)
+- [x] SQL feature store views (`ml/data_processing/sql/feature_store_views.sql`)
+
+## ML UC-02: Invoice Three-Way Match
+- [x] SQL preprocessing (`ml/data_processing/sql/uc02_preprocessing.sql`)
+- [x] Python preprocessing (`ml/data_processing/python/uc02_preprocessing.py`)
+- [x] EDA notebook (`ml/uc_02_invoice_match/exploration/01_eda.ipynb`)
+- [x] Feature engineering notebook (`ml/uc_02_invoice_match/feature_engineering/02_feature_engineering.ipynb`)
+- [x] Feature functions standalone script (`ml/uc_02_invoice_match/feature_engineering/feature_functions.py`)
+- [x] Training pipeline notebook (`ml/uc_02_invoice_match/training/03_training_pipeline.ipynb`)
+- [x] Model explanation notebook (`ml/uc_02_invoice_match/training/04_model_explanation.ipynb`)
+- [x] Standalone training script (`ml/uc_02_invoice_match/training/train.py`)
+- [x] Training config (`ml/uc_02_invoice_match/training/config.yaml`)
+- [x] Training Dockerfile (`ml/uc_02_invoice_match/training/Dockerfile`)
+- [x] Inference demo notebook (`ml/uc_02_invoice_match/inference/05_inference_demo.ipynb`)
+- [x] Inference serving script + Dockerfile (`ml/uc_02_invoice_match/inference/serve.py`)
+
+## ML Remaining
+- [ ] UC-01: Maverick PO Detection
+- [ ] UC-03: Vendor Risk Scoring
+- [ ] UC-04: Price Anomaly Detection
+- [ ] UC-05: Delivery Delay Prediction
+- [ ] UC-06: Contract Renewal Prediction
+- [ ] UC-07: Payment Timing Optimization
+- [ ] UC-08: Spend Concentration Risk
+- [ ] UC-09: GR Quality Prediction
+- [ ] UC-10: PR Priority Scoring
+- [ ] UC-11: Duplicate Invoice Detection
+- [ ] UC-12: Spend Classification
+- [ ] UC-13: Confidentiality Tier Prediction
+- [ ] ML monitoring infrastructure
+- [ ] ML retraining pipeline

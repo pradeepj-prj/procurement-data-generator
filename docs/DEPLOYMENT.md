@@ -115,6 +115,21 @@ ORDER BY table_name;
 
 Expected totals at 1x scale: ~10,600 rows across 29 tables.
 
+## ML Model Training
+
+After data is deployed to Postgres (or generated locally as CSV), train the UC-02 model:
+
+```bash
+# From CSV (local, no DB needed)
+cd ml/uc_02_invoice_match/training
+python train.py --data-source csv --csv-dir ../../../output/csv --n-trials 50
+
+# From Postgres (reads .env for connection)
+python train.py --data-source postgres --n-trials 50
+```
+
+The script trains 4 models (Logistic Regression, Random Forest, XGBoost, LightGBM), selects the best by F1 score, and saves `best_model.joblib`. MLflow tracking logs to `mlruns/`.
+
 ## Redeployment
 
 The deployment is fully idempotent. Running `deploy_to_ec2.sh` again will:

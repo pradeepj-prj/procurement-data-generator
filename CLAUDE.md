@@ -20,6 +20,16 @@ python -m procurement_generator --scale 1 --seeds-dir seeds --output-dir output
 
 # Run tests
 pytest tests/
+
+# Install ML dependencies
+pip install -e ".[ml]"
+
+# Train UC-02 model (from CSV data)
+cd ml/uc_02_invoice_match/training
+python train.py --data-source csv --csv-dir ../../../output/csv --n-trials 50
+
+# Run inference
+python -m ml.uc_02_invoice_match.inference.serve --model ml/uc_02_invoice_match/training/best_model.joblib --csv-dir output/csv
 ```
 
 Output goes to `output/csv/`, `output/sql/`, and `output/postgres/`.
@@ -45,8 +55,21 @@ Key generation order: org → categories → materials → legal entities → ve
 | `src/procurement_generator/data_store.py` | Central data store |
 | `src/procurement_generator/config.py` | YAML config + ScaleConfig |
 | `seeds/*.yaml` | Seed configuration (8 files) |
+| `ml/common/db_config.py` | Dual CSV/Postgres data loader |
+| `ml/common/feature_store.py` | Shared feature computation (vendor profile, performance, invoice behavior, price benchmarks) |
+| `ml/data_processing/python/uc02_preprocessing.py` | UC-02 table joins and temporal features |
+| `ml/uc_02_invoice_match/feature_engineering/feature_functions.py` | UC-02 feature pipeline with LOO and leakage guards |
+| `ml/uc_02_invoice_match/training/train.py` | 4-model training (LR, RF, XGBoost, LightGBM) with Optuna + MLflow |
+| `ml/uc_02_invoice_match/inference/serve.py` | Inference predictor with batch scoring and feature explanations |
 
 ## ML Use Cases
+
+### Implementation Status
+
+| ID | Name | Status |
+|----|------|--------|
+| UC-02 | Invoice Three-Way Match | **Complete** — preprocessing, feature engineering, training (4 models), inference, SAP AI Core Dockerfiles |
+| UC-01, UC-03–UC-13 | All others | Not started |
 
 ### Reference
 
