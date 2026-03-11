@@ -22,14 +22,15 @@ The procurement data generator is a Python application that produces realistic, 
               ┌────────────────┼────────────────┐
               v                v                v
         output/csv/      output/sql/     output/postgres/
-                                                │
-                                          deploy_to_ec2.sh
-                                                │
-                                                v
-                                    ┌───────────────────┐
-                                    │  EC2 / PostgreSQL  │
-                                    │  procurement_demo  │
-                                    └───────────────────┘
+                          output/hana/          │
+                               │          deploy_to_ec2.sh
+                       deploy_to_hana.py        │
+                               │                v
+                               v      ┌───────────────────┐
+                    ┌──────────────┐  │  EC2 / PostgreSQL  │
+                    │  HANA Cloud  │  │  procurement_demo  │
+                    │     (BTP)    │  └───────────────────┘
+                    └──────────────┘
 ```
 
 ## Components
@@ -62,7 +63,7 @@ The central orchestrator. Runs 18 stages in strict dependency order. Each stage:
 | 15 | Reconciliation | Post-proc | contract consumption + delivery date backfill |
 | 16 | Full Validation | Validator | all integrity, business rules, and statistical checks |
 | 17 | Seed Verification | Validator | verify all 12 seed scenarios present |
-| 18 | Export | Exporter | CSV + HANA SQL + Postgres SQL |
+| 18 | Export | Exporter | CSV + SQL + HANA Cloud + Postgres SQL |
 
 ### DataStore (`data_store.py`)
 
@@ -101,9 +102,10 @@ Four validation modules:
 
 ### Exporters (`exporters/`)
 
-Three export formats, all generated from the same DataStore:
+Four export formats, all generated from the same DataStore:
 - **`csv_exporter.py`** — One CSV file per table
-- **`sql_exporter.py`** — HANA-compatible DDL + batch INSERT
+- **`sql_exporter.py`** — Basic HANA-compatible DDL + batch INSERT; also holds shared constants (`PRIMARY_KEYS`, `TABLE_ORDER`)
+- **`hana_exporter.py`** — HANA Cloud DDL with schema qualification (`"PROCUREMENT"."table"`), safe DROP blocks (error code 259), primary keys, and monolithic `_load_all_hana.sql`
 - **`postgres_exporter.py`** — Postgres DDL with schema qualification, primary keys, `DROP CASCADE`, and a `_load_all.sql` master script
 
 ### Config (`config.py`)
@@ -111,9 +113,12 @@ Three export formats, all generated from the same DataStore:
 - `ScaleConfig` — Scale multiplier (1x, 3x, 10x) with computed targets for each entity type
 - YAML loading for seeds and config
 
-### Deployment (`scripts/deploy_to_ec2.sh`)
+### Deployment
 
-Shell script that pushes generated Postgres SQL to an EC2 instance. Reads connection details from `.env`. Supports `--dry-run`. See `docs/DEPLOYMENT.md` for details.
+- **`scripts/deploy_to_hana.py`** — Python script that deploys HANA Cloud SQL to SAP HANA Cloud on BTP via `hdbcli`. Creates schema, loads tables in FK order, verifies row counts. Supports `--dry-run`.
+- **`scripts/deploy_to_ec2.sh`** — Shell script that pushes Postgres SQL to an EC2 instance via SSH/SCP. Creates role/database, loads tables, verifies. Supports `--dry-run`.
+
+Both read connection details from `.env`. See `docs/DEPLOYMENT.md` for setup.
 
 ## Data Flow
 
@@ -127,7 +132,7 @@ Seeds (YAML) ──> Generators ──> DataStore ──> Validators ──> Exp
 1. **Seed-first generation**: Each generator reads its seed YAML, creates those entities, then generates bulk entities to fill the scale target
 2. **Dependency ordering**: Generators run in FK-dependency order (org before materials, materials before vendors, etc.)
 3. **Validation gates**: After master data and again after all transactional data, validators check FK integrity, business rules, and statistical distributions
-4. **Export**: All three formats are produced from the same DataStore snapshot
+4. **Export**: All four formats are produced from the same DataStore snapshot
 
 ## Scale Model
 
@@ -154,8 +159,9 @@ Seeds (YAML) ──> Generators ──> DataStore ──> Validators ──> Exp
 | Synthetic data | Faker |
 | SQL (HANA) | Custom DDL generator |
 | SQL (Postgres) | Custom DDL generator |
-| Database | PostgreSQL 16 on EC2 (Ubuntu) |
-| Deployment | Bash + SSH/SCP |
+| Database | SAP HANA Cloud (BTP) + PostgreSQL 16 (EC2) |
+| HANA driver | hdbcli |
+| Deployment | Python (HANA Cloud) + Bash/SSH (EC2 Postgres) |
 | ML pipeline | pandas, scikit-learn, XGBoost, LightGBM, MLflow, Optuna |
 | ML containers | Docker (SAP AI Core compatible) |
 
