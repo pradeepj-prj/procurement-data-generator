@@ -198,6 +198,54 @@ python train.py --data-source postgres --n-trials 50
 
 The script trains 4 models (Logistic Regression, Random Forest, XGBoost, LightGBM), selects the best by F1 score, and saves `best_model.joblib`. MLflow tracking logs to `mlruns/`.
 
+## Knowledge Graph Deployment
+
+After relational data is loaded to HANA Cloud, deploy the graph workspace.
+
+### What It Creates
+
+- **10 vertex views** — one per entity type (vendor, material, plant, category, PO, contract, invoice, GR, payment, PR)
+- **14 edge views** — relationships (supplies, ordered_from, contains_material, under_contract, invoiced_for, received_for, pays, belongs_to_category, category_parent, located_at, has_contract, requested_material, invoiced_by_vendor, paid_to_vendor)
+- **2 unified views** — `V_ALL_VERTICES` and `E_ALL_EDGES` (UNION ALL with unique IDs)
+- **1 graph workspace** — `PROCUREMENT_KG` (HANA Property Graph Engine)
+
+### Deploy
+
+```bash
+# 1. Preview statements
+python scripts/graph/deploy_graph.py --dry-run
+
+# 2. Deploy graph workspace (after relational data is loaded)
+python scripts/graph/deploy_graph.py
+
+# 3. SQL-only fallback (no graph engine required, just vertex/edge views)
+python scripts/graph/deploy_graph.py --no-graph
+```
+
+### CLI Options
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--dry-run` | off | Print statements without connecting |
+| `--no-graph` | off | Create vertex/edge views only, skip GRAPH WORKSPACE |
+| `--sql-file` | `scripts/graph/create_graph_workspace.sql` | Path to graph DDL |
+| `--schema` | from `.env` / `PROCUREMENT` | HANA schema name |
+
+### Verification
+
+The deploy script prints vertex/edge counts and graph workspace status:
+
+```
+=== Graph Workspace Deployment ===
+  Vertices: 2,872 (10 types)
+  Edges:    8,450 (14 types)
+  Workspace: PROCUREMENT_KG [CREATED]
+```
+
+### SQL-Only Mode (`--no-graph`)
+
+If the HANA Property Graph Engine is not available (e.g., trial instance limitations), use `--no-graph` to create only the vertex/edge views. These views are usable via standard SQL JOINs for the same GraphRAG queries — just without graph traversal algorithms (shortest path, BFS, etc.).
+
 ## Redeployment
 
 The deployment is fully idempotent. Running `deploy_to_ec2.sh` again will:

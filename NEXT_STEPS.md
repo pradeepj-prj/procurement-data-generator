@@ -5,8 +5,84 @@
 - Data generator: 18-stage pipeline, 29 tables, ~10K rows at 1x scale, 12 seed scenarios
 - Exporters: CSV, basic SQL, HANA Cloud SQL, Postgres SQL
 - Deployment: HANA Cloud (Python/hdbcli) + EC2 Postgres (Bash/SSH)
+- Knowledge graph: HANA Cloud GRAPH WORKSPACE (10 vertex views, 14 edge views, unified views, deploy script with `--dry-run` and `--no-graph` fallback)
 - ML pipeline: UC-02 Invoice Three-Way Match (preprocessing, feature engineering, 4-model training, inference, SAP AI Core Dockerfiles)
 - Documentation: README, ARCHITECTURE, DEPLOYMENT, ML_USE_CASES, CLAUDE.md
+
+---
+
+## 0. Graph Workspace — Your Action Items
+
+The knowledge graph SQL and deploy script are ready. You need to deploy and validate on your HANA Cloud instance.
+
+### Prerequisites
+
+- [ ] Relational data already loaded to HANA Cloud (`python scripts/deploy_to_hana.py`)
+- [ ] `.env` configured with HANA Cloud credentials (`HANA_HOST`, `HANA_PORT`, `HANA_USER`, `HANA_PASSWORD`, `HANA_SCHEMA`)
+- [ ] `hdbcli` installed (`pip install -e ".[hana]"`)
+
+### Deploy & Validate
+
+```bash
+# 1. Preview the 54 SQL statements that will execute
+python scripts/graph/deploy_graph.py --dry-run
+
+# 2. Deploy the graph workspace
+python scripts/graph/deploy_graph.py
+
+# 3. If graph engine is not available on your instance, use SQL-only mode
+python scripts/graph/deploy_graph.py --no-graph
+```
+
+### Post-Deploy Verification (run in HANA SQL console)
+
+```sql
+-- Check vertex counts by type
+SELECT vertex_type, COUNT(*) FROM "PROCUREMENT"."V_ALL_VERTICES" GROUP BY vertex_type ORDER BY vertex_type;
+
+-- Check edge counts by type
+SELECT edge_type, COUNT(*) FROM "PROCUREMENT"."E_ALL_EDGES" GROUP BY edge_type ORDER BY COUNT(*) DESC;
+
+-- Verify graph workspace exists
+SELECT * FROM GRAPH_WORKSPACES WHERE SCHEMA_NAME = 'PROCUREMENT';
+
+-- Test a graph traversal: find all POs for a specific vendor (2-hop)
+SELECT v2.vertex_id, v2.vertex_type, v2.label
+FROM "PROCUREMENT"."V_ALL_VERTICES" v1
+JOIN "PROCUREMENT"."E_ALL_EDGES" e ON e.source_vertex = v1.vertex_id
+JOIN "PROCUREMENT"."V_ALL_VERTICES" v2 ON v2.vertex_id = e.target_vertex
+WHERE v1.vertex_id = 'VND-SG-00001' AND e.edge_type = 'HAS_CONTRACT';
+
+-- Test a multi-hop query: Vendor → Contract → PO (via under_contract edges)
+SELECT v.vertex_id AS vendor, e1.target_vertex AS contract, e2.source_vertex AS po
+FROM "PROCUREMENT"."E_ALL_EDGES" e1
+JOIN "PROCUREMENT"."E_ALL_EDGES" e2 ON e2.target_vertex = e1.target_vertex
+WHERE e1.edge_type = 'HAS_CONTRACT' AND e2.edge_type = 'UNDER_CONTRACT'
+LIMIT 20;
+```
+
+### Expected Results (at 1x scale)
+
+| Vertex Type | Approx Count |
+|-------------|-------------|
+| VENDOR | 120 |
+| MATERIAL | 800 |
+| PLANT | 8 |
+| CATEGORY | ~79 |
+| PURCHASE_ORDER | 400 |
+| CONTRACT | 40 |
+| INVOICE | 320 |
+| GOODS_RECEIPT | 350 |
+| PAYMENT | ~260 |
+| PURCHASE_REQ | 500 |
+| **Total vertices** | **~2,877** |
+| **Total edges** | **~8,500** |
+
+### Recommended Next Steps for the Graph
+
+- [ ] **Connect a GenAI agent**: Use SAP GenAI Hub to build a GraphRAG agent that traverses the graph for procurement Q&A (e.g., "Which vendors supply materials for plant 1000?", "Show the full procure-to-pay chain for PO-00001")
+- [ ] **Add graph algorithms**: Once the GRAPH WORKSPACE is live, use HANA's built-in algorithms (shortest path, BFS, neighborhood) for supply chain analysis
+- [ ] **Add more edge types**: Consider edges for `PR → PO` (pr_id linkage on po_line_item), `Material → Plant` (via material_plant_extension), `Vendor → Plant` (via source_list aggregation)
 
 ---
 
@@ -27,7 +103,7 @@ The data exists to power a GenAI demo. The demo app itself is the next major del
 - [ ] Define demo scenarios and user flows (which of the 12 seeds to showcase)
 - [ ] Choose GenAI framework (SAP GenAI Hub, LangChain, or direct Claude/GPT API)
 - [ ] Build a natural-language-to-SQL interface over the HANA Cloud schema
-- [ ] Add retrieval-augmented generation (RAG) for procurement domain context
+- [ ] Add GraphRAG over the knowledge graph for multi-hop procurement queries
 - [ ] Create a UI (SAP Fiori, Streamlit, or similar)
 - [ ] Wire in ML model predictions (UC-02 match status, vendor risk, etc.) as tool calls
 

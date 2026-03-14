@@ -117,8 +117,47 @@ Four export formats, all generated from the same DataStore:
 
 - **`scripts/deploy_to_hana.py`** — Python script that deploys HANA Cloud SQL to SAP HANA Cloud on BTP via `hdbcli`. Creates schema, loads tables in FK order, verifies row counts. Supports `--dry-run`.
 - **`scripts/deploy_to_ec2.sh`** — Shell script that pushes Postgres SQL to an EC2 instance via SSH/SCP. Creates role/database, loads tables, verifies. Supports `--dry-run`.
+- **`scripts/graph/deploy_graph.py`** — Deploys the knowledge graph (vertex/edge views + GRAPH WORKSPACE) to HANA Cloud. Requires relational data to be loaded first. Supports `--dry-run` and `--no-graph` (SQL-only fallback).
 
-Both read connection details from `.env`. See `docs/DEPLOYMENT.md` for setup.
+All deploy scripts read connection details from `.env`. See `docs/DEPLOYMENT.md` for setup.
+
+### Knowledge Graph (`scripts/graph/`)
+
+A HANA Cloud GRAPH WORKSPACE over the 29 procurement tables, designed for GraphRAG consumption by a SAP GenAI Hub agent.
+
+```
+29 relational tables
+        │
+        v
+┌─────────────────────────────────┐
+│  10 Vertex Views                │  V_VENDOR, V_MATERIAL, V_PLANT,
+│  (entity nodes)                 │  V_CATEGORY, V_PURCHASE_ORDER,
+│                                 │  V_CONTRACT, V_INVOICE,
+│                                 │  V_GOODS_RECEIPT, V_PAYMENT,
+│                                 │  V_PURCHASE_REQ
+├─────────────────────────────────┤
+│  14 Edge Views                  │  E_SUPPLIES, E_ORDERED_FROM,
+│  (relationships)                │  E_CONTAINS_MATERIAL, E_UNDER_CONTRACT,
+│                                 │  E_INVOICED_FOR, E_RECEIVED_FOR,
+│                                 │  E_PAYS, E_BELONGS_TO_CATEGORY,
+│                                 │  E_CATEGORY_PARENT, E_LOCATED_AT,
+│                                 │  E_HAS_CONTRACT, E_REQUESTED_MATERIAL,
+│                                 │  E_INVOICED_BY_VENDOR, E_PAID_TO_VENDOR
+├─────────────────────────────────┤
+│  Unified Views                  │  V_ALL_VERTICES (UNION ALL of 10)
+│                                 │  E_ALL_EDGES (UNION ALL of 14, offset IDs)
+├─────────────────────────────────┤
+│  GRAPH WORKSPACE                │  PROCUREMENT_KG
+│  (HANA Property Graph Engine)   │
+└─────────────────────────────────┘
+```
+
+**Key design decisions:**
+- **Views, not materialized tables** — vertex/edge views read directly from base tables, so the graph always reflects the current data without refresh
+- **Typed vertex/edge views** — each entity type has its own view with RAG-relevant attributes (scores, dates, amounts, statuses); the unified views carry only `vertex_id`/`vertex_type`/`label` for the graph engine
+- **VARCHAR keys** — entity IDs have distinct prefixes (VND-, MAT-, PO-, CTR-, INV-, GR-, PAY-, PR-, plant codes, category codes), guaranteeing uniqueness across the unified vertex view
+- **BIGINT edge IDs** — `ROW_NUMBER()` per edge view, offset by `N * 100000` in the unified edge view to guarantee cross-type uniqueness
+- **`--no-graph` fallback** — creates only the vertex/edge views (usable via standard SQL JOINs) without requiring the HANA Property Graph Engine license
 
 ## Data Flow
 

@@ -30,6 +30,15 @@ python scripts/deploy_to_hana.py
 # Deploy dry-run
 python scripts/deploy_to_hana.py --dry-run
 
+# Deploy knowledge graph (after relational data is loaded)
+python scripts/graph/deploy_graph.py
+
+# Graph deploy dry-run
+python scripts/graph/deploy_graph.py --dry-run
+
+# Graph deploy SQL-only (no graph workspace, views only)
+python scripts/graph/deploy_graph.py --no-graph
+
 # Install ML dependencies
 pip install -e ".[ml]"
 
@@ -72,6 +81,8 @@ Key generation order: org → categories → materials → legal entities → ve
 | `ml/uc_02_invoice_match/inference/serve.py` | Inference predictor with batch scoring and feature explanations |
 | `src/procurement_generator/exporters/hana_exporter.py` | HANA Cloud SQL exporter |
 | `scripts/deploy_to_hana.py` | HANA Cloud deploy script (hdbcli) |
+| `scripts/graph/create_graph_workspace.sql` | Graph workspace DDL (10 vertex views, 14 edge views, GRAPH WORKSPACE) |
+| `scripts/graph/deploy_graph.py` | Graph workspace deploy script (`--dry-run`, `--no-graph` fallback) |
 
 ## ML Use Cases
 
