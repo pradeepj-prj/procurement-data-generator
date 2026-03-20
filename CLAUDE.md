@@ -42,6 +42,27 @@ python scripts/graph/deploy_graph.py --no-graph
 # Install ML dependencies
 pip install -e ".[ml]"
 
+# Install GraphRAG (NetworkX only, no HANA needed)
+pip install -e ".[graphrag]"
+
+# Install GraphRAG + HANA Cloud backend
+pip install -e ".[graphrag-hana]"
+
+# MCP Server (NetworkX backend, no DB)
+GRAPH_BACKEND=networkx python -m graphrag.mcp_server
+
+# MCP Server (HANA Cloud backend)
+GRAPH_BACKEND=hana python -m graphrag.mcp_server
+
+# MCP Server (HTTP transport for SAP GenAI Hub MCP Gateway)
+python -m graphrag.mcp_server --transport streamable-http --port 8080
+
+# REST API
+python -m graphrag.api
+
+# REST API (dev mode with auto-reload)
+uvicorn graphrag.api:app --reload --port 8000
+
 # Train UC-02 model (from CSV data)
 cd ml/uc_02_invoice_match/training
 python train.py --data-source csv --csv-dir ../../../output/csv --n-trials 50
@@ -83,6 +104,14 @@ Key generation order: org → categories → materials → legal entities → ve
 | `scripts/deploy_to_hana.py` | HANA Cloud deploy script (hdbcli) |
 | `scripts/graph/create_graph_workspace.sql` | Graph workspace DDL (10 vertex views, 14 edge views, GRAPH WORKSPACE) |
 | `scripts/graph/deploy_graph.py` | Graph workspace deploy script (`--dry-run`, `--no-graph` fallback) |
+| `graphrag/config.py` | GraphRAG config (HANA + NetworkX + GenAI Hub) from `.env` |
+| `graphrag/backends/protocol.py` | `GraphBackend` Protocol (16 methods) |
+| `graphrag/backends/networkx_backend.py` | NetworkX backend (CSV → MultiDiGraph) |
+| `graphrag/backends/hana_backend.py` | HANA Cloud backend (SQL on vertex/edge views) |
+| `graphrag/retrieval/context_formatter.py` | Format graph results as structured text for LLM |
+| `graphrag/llm/router.py` | Intent classification → graph query → LLM answer |
+| `graphrag/mcp_server.py` | MCP server (10 tools, stdio + HTTP transport) |
+| `graphrag/api.py` | FastAPI REST endpoint (`POST /chat`) |
 
 ## ML Use Cases
 
