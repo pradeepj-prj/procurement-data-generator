@@ -13,8 +13,10 @@ Prerequisites:
 from __future__ import annotations
 
 import argparse
+import csv
 import os
 import sys
+import time
 from pathlib import Path
 
 # Add project root to path for TABLE_ORDER import
@@ -48,33 +50,33 @@ def get_config(args: argparse.Namespace) -> dict:
         "password": os.environ.get("HANA_PASSWORD", ""),
         "schema": args.schema or os.environ.get("HANA_SCHEMA", "PROCUREMENT"),
         "sql_dir": Path(args.sql_dir),
+        "csv_dir": Path(args.csv_dir),
         "dry_run": args.dry_run,
     }
 
 
-def validate_sql_dir(sql_dir: Path) -> list[str]:
-    """Check that SQL files exist. Returns list of table files found."""
+def validate_dirs(sql_dir: Path, csv_dir: Path) -> list[str]:
+    """Check that SQL and CSV files exist. Returns list of table names found."""
     if not sql_dir.exists():
         print(f"ERROR: {sql_dir} not found. Run 'python -m procurement_generator --scale 1' first.")
         sys.exit(1)
-
-    master = sql_dir / "_load_all_hana.sql"
-    if not master.exists():
-        print(f"ERROR: {master} not found.")
+    if not csv_dir.exists():
+        print(f"ERROR: {csv_dir} not found. Run 'python -m procurement_generator --scale 1' first.")
         sys.exit(1)
 
     table_files = []
     for table_name in TABLE_ORDER:
-        table_file = sql_dir / f"{table_name}.sql"
-        if table_file.exists():
+        sql_file = sql_dir / f"{table_name}.sql"
+        csv_file = csv_dir / f"{table_name}.csv"
+        if sql_file.exists() and csv_file.exists():
             table_files.append(table_name)
     return table_files
 
 
-def split_statements(sql_text: str) -> list[str]:
-    """Split SQL text into individual statements.
+def extract_ddl(sql_text: str) -> list[str]:
+    """Extract only DDL statements (DROP block + CREATE TABLE) from SQL file.
 
-    Handles DO BEGIN...END blocks and regular semicolon-delimited statements.
+    Skips INSERT statements — data is loaded from CSV via executemany.
     """
     statements = []
     current = []
@@ -83,7 +85,6 @@ def split_statements(sql_text: str) -> list[str]:
     for line in sql_text.splitlines():
         stripped = line.strip()
 
-        # Skip comments and empty lines outside statements
         if not current and (stripped.startswith("--") or not stripped):
             continue
 
@@ -100,16 +101,18 @@ def split_statements(sql_text: str) -> list[str]:
                 in_do_block = False
             continue
 
-        # Regular statement accumulation
+        # Skip INSERT statements
+        if stripped.upper().startswith("INSERT"):
+            continue
+
+        # Accumulate CREATE TABLE etc.
         current.append(line)
         if stripped.endswith(";"):
             stmt = "\n".join(current).strip()
             if stmt and not stmt.startswith("--"):
-                # Remove trailing semicolon for hdbcli execute
                 statements.append(stmt.rstrip(";"))
             current = []
 
-    # Flush any remaining
     if current:
         stmt = "\n".join(current).strip()
         if stmt and not stmt.startswith("--"):
@@ -118,13 +121,23 @@ def split_statements(sql_text: str) -> list[str]:
     return statements
 
 
+def load_csv_data(csv_path: Path) -> tuple[list[str], list[tuple]]:
+    """Read CSV file. Returns (column_names, rows_as_tuples)."""
+    with open(csv_path, encoding="utf-8") as f:
+        reader = csv.reader(f)
+        columns = next(reader)
+        rows = [tuple(v if v != "" else None for v in row) for row in reader]
+    return columns, rows
+
+
 def deploy(config: dict) -> None:
     """Deploy SQL files to HANA Cloud."""
     sql_dir = config["sql_dir"]
+    csv_dir = config["csv_dir"]
     schema = config["schema"]
     dry_run = config["dry_run"]
 
-    table_files = validate_sql_dir(sql_dir)
+    table_files = validate_dirs(sql_dir, csv_dir)
 
     print("=== HANA Cloud Deployment ===")
     print(f"  Host:    {config['host']}")
@@ -132,6 +145,7 @@ def deploy(config: dict) -> None:
     print(f"  User:    {config['user']}")
     print(f"  Schema:  {schema}")
     print(f"  SQL dir: {sql_dir}")
+    print(f"  CSV dir: {csv_dir}")
     print(f"  Tables:  {len(table_files)}")
     if dry_run:
         print("  [DRY RUN] No connection will be made.")
@@ -141,11 +155,13 @@ def deploy(config: dict) -> None:
         print("--- Step 1: Create schema ---")
         print(f'  [CMD] CREATE SCHEMA "{schema}"')
         print()
-        print("--- Step 2: Load tables ---")
+        print("--- Step 2: Load tables (DDL from SQL, data from CSV) ---")
         for table_name in table_files:
-            table_file = sql_dir / f"{table_name}.sql"
-            stmts = split_statements(table_file.read_text(encoding="utf-8"))
-            print(f"  [CMD] {table_name}: {len(stmts)} statements")
+            sql_file = sql_dir / f"{table_name}.sql"
+            csv_file = csv_dir / f"{table_name}.csv"
+            ddl_stmts = extract_ddl(sql_file.read_text(encoding="utf-8"))
+            _, rows = load_csv_data(csv_file)
+            print(f"  [CMD] {table_name}: {len(ddl_stmts)} DDL + {len(rows)} rows via executemany")
         print()
         print("--- Step 3: Verify ---")
         print(f'  [CMD] SELECT TABLE_NAME, RECORD_COUNT FROM M_TABLES WHERE SCHEMA_NAME = \'{schema}\'')
@@ -193,13 +209,33 @@ def deploy(config: dict) -> None:
     # Load tables
     print()
     print("--- Step 3: Load tables ---")
+    t_start = time.time()
     for table_name in table_files:
-        table_file = sql_dir / f"{table_name}.sql"
-        stmts = split_statements(table_file.read_text(encoding="utf-8"))
-        for stmt in stmts:
+        t0 = time.time()
+
+        # Execute DDL (DROP + CREATE)
+        sql_file = sql_dir / f"{table_name}.sql"
+        ddl_stmts = extract_ddl(sql_file.read_text(encoding="utf-8"))
+        for stmt in ddl_stmts:
             cursor.execute(stmt)
         conn.commit()
-        print(f"  {table_name}: {len(stmts)} statements executed")
+
+        # Load data from CSV via executemany
+        csv_file = csv_dir / f"{table_name}.csv"
+        columns, rows = load_csv_data(csv_file)
+        if rows:
+            qualified = f'"{schema}"."{table_name}"'
+            cols = ", ".join(columns)
+            placeholders = ", ".join("?" * len(columns))
+            sql = f"INSERT INTO {qualified} ({cols}) VALUES ({placeholders})"
+            cursor.executemany(sql, rows)
+            conn.commit()
+
+        elapsed = time.time() - t0
+        print(f"  {table_name:35s} {len(rows):>6,} rows  ({elapsed:.1f}s)")
+
+    total_elapsed = time.time() - t_start
+    print(f"\n  Load time: {total_elapsed:.1f}s")
 
     # Verify
     print()
@@ -226,6 +262,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Deploy procurement data to SAP HANA Cloud")
     parser.add_argument("--dry-run", action="store_true", help="Print actions without connecting")
     parser.add_argument("--sql-dir", default="output/hana", help="Path to HANA SQL files")
+    parser.add_argument("--csv-dir", default="output/csv", help="Path to CSV data files")
     parser.add_argument("--schema", default=None, help="HANA schema name (default: PROCUREMENT)")
     args = parser.parse_args()
 

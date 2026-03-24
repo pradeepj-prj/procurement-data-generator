@@ -52,20 +52,12 @@ def export_hana_cloud(store, output_dir: Path, schema: str = "PROCUREMENT") -> d
             f.write(",\n".join(col_defs))
             f.write("\n);\n\n")
 
-            # INSERT statements in batches of 100
-            batch_size = 100
-            for batch_start in range(0, len(entities), batch_size):
-                batch = entities[batch_start:batch_start + batch_size]
-                cols = ", ".join(field_names)
-                f.write(f"INSERT INTO {qualified} ({cols}) VALUES\n")
-
-                rows = []
-                for entity in batch:
-                    vals = [_sql_value(getattr(entity, fn)) for fn in field_names]
-                    rows.append(f"    ({', '.join(vals)})")
-
-                f.write(",\n".join(rows))
-                f.write(";\n\n")
+            # INSERT statements — one per row (HANA does not support multi-row VALUES)
+            cols = ", ".join(field_names)
+            for entity in entities:
+                vals = [_sql_value(getattr(entity, fn)) for fn in field_names]
+                f.write(f"INSERT INTO {qualified} ({cols}) VALUES ({', '.join(vals)});\n")
+            f.write("\n")
 
         counts[table_name] = len(entities)
 

@@ -332,14 +332,14 @@ class HanaGraphBackend:
                 f'''SELECT vertex_id AS id, vertex_type, label
                     FROM "{self._s}"."V_ALL_VERTICES"
                     WHERE vertex_type = ? AND (LOWER(label) LIKE LOWER(?) OR LOWER(vertex_id) LIKE LOWER(?))
-                    ORDER BY vertex_id FETCH FIRST 20 ROWS ONLY''',
+                    ORDER BY vertex_id LIMIT 20''',
                 (entity_type.upper(), like_pattern, like_pattern),
             )
         return self._q(
             f'''SELECT vertex_id AS id, vertex_type, label
                 FROM "{self._s}"."V_ALL_VERTICES"
                 WHERE LOWER(label) LIKE LOWER(?) OR LOWER(vertex_id) LIKE LOWER(?)
-                ORDER BY vertex_id FETCH FIRST 20 ROWS ONLY''',
+                ORDER BY vertex_id LIMIT 20''',
             (like_pattern, like_pattern),
         )
 

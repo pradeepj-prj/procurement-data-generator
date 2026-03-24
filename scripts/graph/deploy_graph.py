@@ -107,13 +107,9 @@ def split_statements(sql_text: str) -> list[str]:
 def classify_statement(stmt: str) -> str:
     """Classify a SQL statement for filtering and reporting."""
     upper = stmt.upper()
-    if "DROP GRAPH WORKSPACE" in upper:
-        return "drop_graph"
     if "CREATE GRAPH WORKSPACE" in upper:
         return "create_graph"
-    if "DROP VIEW" in upper:
-        return "drop_view"
-    if "CREATE VIEW" in upper:
+    if "CREATE" in upper and "VIEW" in upper:
         view_name = ""
         for token in stmt.split('"'):
             if token.startswith("V_") or token.startswith("E_"):
@@ -211,9 +207,20 @@ def deploy(config: dict) -> None:
     else:
         print(f"  Found {table_count} tables in schema \"{schema}\" (expected {expected}).")
 
-    # Step 3: Execute SQL statements
+    # Step 3: Drop existing graph workspace (must be done before replacing views)
+    if not no_graph:
+        print()
+        print("--- Step 3: Drop existing graph workspace ---")
+        try:
+            cursor.execute(f'DROP GRAPH WORKSPACE "{schema}"."PROCUREMENT_KG"')
+            conn.commit()
+            print("  Dropped existing PROCUREMENT_KG.")
+        except Exception:
+            print("  No existing PROCUREMENT_KG (OK).")
+
+    # Step 4: Execute SQL statements
     print()
-    print("--- Step 3: Execute graph DDL ---")
+    print("--- Step 4: Execute graph DDL ---")
     for i, stmt in enumerate(statements, 1):
         cls = classify_statement(stmt)
         try:
@@ -222,19 +229,15 @@ def deploy(config: dict) -> None:
             print(f"  [{i:2d}] OK  ({cls})")
         except Exception as e:
             print(f"  [{i:2d}] ERR ({cls}): {e}")
-            # DROP failures are expected (object may not exist), continue
-            if cls.startswith("drop_"):
-                continue
-            # For create failures, abort
             cursor.close()
             conn.close()
             print()
             print("=== Deployment FAILED ===")
             sys.exit(1)
 
-    # Step 4: Verification
+    # Step 5: Verification
     print()
-    print("--- Step 4: Verification ---")
+    print("--- Step 5: Verification ---")
 
     # Vertex counts by type
     try:
