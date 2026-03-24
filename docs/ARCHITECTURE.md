@@ -115,7 +115,7 @@ Four export formats, all generated from the same DataStore:
 
 ### Deployment
 
-- **`scripts/deploy_to_hana.py`** — Python script that deploys HANA Cloud SQL to SAP HANA Cloud on BTP via `hdbcli`. Creates schema, loads tables in FK order, verifies row counts. Supports `--dry-run`.
+- **`scripts/deploy_to_hana.py`** — Python script that deploys to SAP HANA Cloud on BTP via `hdbcli`. Creates schema, executes DDL from `output/hana/`, bulk-loads data from `output/csv/` via `executemany`, verifies row counts. Supports `--dry-run`.
 - **`scripts/deploy_to_ec2.sh`** — Shell script that pushes Postgres SQL to an EC2 instance via SSH/SCP. Creates role/database, loads tables, verifies. Supports `--dry-run`.
 - **`scripts/graph/deploy_graph.py`** — Deploys the knowledge graph (vertex/edge views + GRAPH WORKSPACE) to HANA Cloud. Requires relational data to be loaded first. Supports `--dry-run` and `--no-graph` (SQL-only fallback).
 
@@ -201,6 +201,9 @@ Seeds (YAML) ──> Generators ──> DataStore ──> Validators ──> Exp
 | Database | SAP HANA Cloud (BTP) + PostgreSQL 16 (EC2) |
 | HANA driver | hdbcli |
 | Deployment | Python (HANA Cloud) + Bash/SSH (EC2 Postgres) |
+| LLM integration | sap-ai-sdk-gen (Orchestration V2) via SAP AI Core |
+| GraphRAG | NetworkX (local) or HANA Cloud (SQL on vertex/edge views) |
+| API layer | FastAPI (REST) + MCP (stdio/HTTP) |
 | ML pipeline | pandas, scikit-learn, XGBoost, LightGBM, MLflow, Optuna |
 | ML containers | Docker (SAP AI Core compatible) |
 

@@ -4,8 +4,10 @@
 
 - Data generator: 18-stage pipeline, 29 tables, ~10K rows at 1x scale, 12 seed scenarios
 - Exporters: CSV, basic SQL, HANA Cloud SQL, Postgres SQL
-- Deployment: HANA Cloud (Python/hdbcli) + EC2 Postgres (Bash/SSH)
+- Deployment: HANA Cloud (Python/hdbcli, CSV executemany) + EC2 Postgres (Bash/SSH)
 - Knowledge graph: HANA Cloud GRAPH WORKSPACE (10 vertex views, 14 edge views, unified views, deploy script with `--dry-run` and `--no-graph` fallback)
+- GraphRAG system: Intent router + graph retrieval + LLM answering (68 tests), MCP server (10 tools, stdio + HTTP), REST API (`POST /chat`), HANA + NetworkX backends
+- LLM integration: SAP GenAI Hub via `sap-ai-sdk-gen` Orchestration V2 (no manual model deployment needed)
 - ML pipeline: UC-02 Invoice Three-Way Match (preprocessing, feature engineering, 4-model training, inference, SAP AI Core Dockerfiles)
 - Documentation: README, ARCHITECTURE, DEPLOYMENT, ML_USE_CASES, CLAUDE.md
 
@@ -80,7 +82,7 @@ LIMIT 20;
 
 ### Recommended Next Steps for the Graph
 
-- [ ] **Connect a GenAI agent**: Use SAP GenAI Hub to build a GraphRAG agent that traverses the graph for procurement Q&A (e.g., "Which vendors supply materials for plant 1000?", "Show the full procure-to-pay chain for PO-00001")
+- [x] ~~**Connect a GenAI agent**~~: GraphRAG system built with SAP GenAI Hub Orchestration V2 — MCP server (10 tools) + REST API + intent router for procurement Q&A
 - [ ] **Add graph algorithms**: Once the GRAPH WORKSPACE is live, use HANA's built-in algorithms (shortest path, BFS, neighborhood) for supply chain analysis
 - [ ] **Add more edge types**: Consider edges for `PR → PO` (pr_id linkage on po_line_item), `Material → Plant` (via material_plant_extension), `Vendor → Plant` (via source_list aggregation)
 
@@ -98,14 +100,14 @@ Verify the HANA Cloud exporter against a real BTP instance.
 
 ## 2. GenAI Demo Application
 
-The data exists to power a GenAI demo. The demo app itself is the next major deliverable.
+The GraphRAG system is functional (MCP server + REST API). Remaining work is UI and ML integration.
 
 - [ ] Define demo scenarios and user flows (which of the 12 seeds to showcase)
-- [ ] Choose GenAI framework (SAP GenAI Hub, LangChain, or direct Claude/GPT API)
-- [ ] Build a natural-language-to-SQL interface over the HANA Cloud schema
-- [ ] Add GraphRAG over the knowledge graph for multi-hop procurement queries
+- [x] ~~Choose GenAI framework~~ — SAP GenAI Hub Orchestration V2 (`sap-ai-sdk-gen`)
+- [x] ~~Add GraphRAG over the knowledge graph~~ — Intent router + HANA/NetworkX backends + MCP server + REST API
 - [ ] Create a UI (SAP Fiori, Streamlit, or similar)
 - [ ] Wire in ML model predictions (UC-02 match status, vendor risk, etc.) as tool calls
+- [ ] Deploy to Cloud Foundry (plan exists at `.claude/plans/cryptic-jumping-llama.md`)
 
 ## 3. ML Use Cases — Tier 1 (High Impact)
 

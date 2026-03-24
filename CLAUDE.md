@@ -101,7 +101,8 @@ Key generation order: org → categories → materials → legal entities → ve
 | `ml/uc_02_invoice_match/training/train.py` | 4-model training (LR, RF, XGBoost, LightGBM) with Optuna + MLflow |
 | `ml/uc_02_invoice_match/inference/serve.py` | Inference predictor with batch scoring and feature explanations |
 | `src/procurement_generator/exporters/hana_exporter.py` | HANA Cloud SQL exporter |
-| `scripts/deploy_to_hana.py` | HANA Cloud deploy script (hdbcli) |
+| `graphrag/llm/genai_hub.py` | SAP GenAI Hub LLM client (Orchestration V2, `sap-ai-sdk-gen`) |
+| `scripts/deploy_to_hana.py` | HANA Cloud deploy script (hdbcli, DDL from SQL + data from CSV via executemany) |
 | `scripts/graph/create_graph_workspace.sql` | Graph workspace DDL (10 vertex views, 14 edge views, GRAPH WORKSPACE) |
 | `scripts/graph/deploy_graph.py` | Graph workspace deploy script (`--dry-run`, `--no-graph` fallback) |
 | `graphrag/config.py` | GraphRAG config (HANA + NetworkX + GenAI Hub) from `.env` |
@@ -187,6 +188,8 @@ cp .env.example .env
 **HANA Cloud**: `HANA_HOST`, `HANA_PORT` (443), `HANA_USER` (DBADMIN), `HANA_PASSWORD`, `HANA_SCHEMA` (PROCUREMENT).
 
 **EC2 Postgres**: `EC2_IP`, `SSH_KEY`, `SSH_USER` (ubuntu), `DB_NAME` (procurement_demo), `DB_USER` (procurement_user), `DB_PASSWORD`, `DB_SCHEMA` (procurement), `DB_PORT` (5432).
+
+**SAP GenAI Hub (AI Core)**: `AICORE_AUTH_URL`, `AICORE_CLIENT_ID`, `AICORE_CLIENT_SECRET`, `AICORE_RESOURCE_GROUP` (default), `AICORE_BASE_URL`, `GENAI_MODEL_NAME` (vendor-prefixed, e.g. `anthropic--claude-4.6-opus`). Uses `sap-ai-sdk-gen` Orchestration V2 — no manual model deployment needed.
 
 ### Data Pipeline
 

@@ -51,7 +51,7 @@ class GraphRAGConfig:
     aicore_client_secret: str = ""
     aicore_resource_group: str = "default"
     aicore_base_url: str = ""
-    genai_model_name: str = "gpt-4o"
+    genai_model_name: str = "anthropic--claude-4.6-opus"
 
     @classmethod
     def from_env(cls) -> GraphRAGConfig:

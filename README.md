@@ -122,6 +122,26 @@ An 18-stage orchestrator runs generators in dependency order, validates after ea
 | SEED-011 | Conditional vendor (sheet metal) |
 | SEED-012 | Multi-plant sourcing (BLDC Motor) |
 
+## GraphRAG
+
+A graph-based retrieval-augmented generation system over the procurement data. Supports natural-language Q&A via an intent router that classifies queries, retrieves graph context, and generates answers using SAP GenAI Hub (Orchestration V2, `sap-ai-sdk-gen`).
+
+```bash
+# Install GraphRAG (NetworkX backend, no DB needed)
+pip install -e ".[graphrag]"
+
+# Install GraphRAG + HANA Cloud backend
+pip install -e ".[graphrag-hana]"
+
+# MCP Server (10 tools, stdio transport)
+GRAPH_BACKEND=networkx python -m graphrag.mcp_server
+
+# REST API
+GRAPH_BACKEND=hana python -m graphrag.api
+```
+
+Two backends: **NetworkX** (loads from CSV, runs locally) and **HANA Cloud** (SQL on vertex/edge views). The LLM client uses SAP AI Core Orchestration V2 — no manual model deployment needed, just set `AICORE_*` env vars from the service key.
+
 ## ML Use Cases
 
 The generated data supports 13 ML use cases across three tiers. UC-02 (Invoice Three-Way Match) is fully implemented.
@@ -163,9 +183,16 @@ procurement-data-generator/
     validators/              # FK integrity, business rules, stats
     exporters/               # CSV, SQL, HANA Cloud, Postgres
   seeds/                     # YAML seed files (12 scenarios)
+  graphrag/
+    llm/genai_hub.py         # SAP GenAI Hub LLM client (Orchestration V2)
+    llm/router.py            # Intent classification → graph query → LLM answer
+    backends/                # HANA Cloud + NetworkX graph backends
+    mcp_server.py            # MCP server (10 tools, stdio + HTTP)
+    api.py                   # FastAPI REST endpoint (POST /chat)
   scripts/
     deploy_to_hana.py        # HANA Cloud deployment (hdbcli)
     deploy_to_ec2.sh         # EC2 Postgres deployment (SSH)
+    graph/deploy_graph.py    # Graph workspace deployment
   ml/
     common/                  # Shared DB config, feature store
     data_processing/         # SQL + Python preprocessing
@@ -189,6 +216,7 @@ pytest tests/
 - Python 3.10+
 - Core: `pyyaml`, `faker`
 - HANA deploy: `hdbcli` (`pip install -e ".[hana]"`)
+- GraphRAG: `sap-ai-sdk-gen`, `mcp`, `fastapi`, `networkx` (`pip install -e ".[graphrag]"`)
 - ML: `pandas`, `scikit-learn`, `xgboost`, `lightgbm`, `mlflow`, `optuna` (`pip install -e ".[ml]"`)
 
 ## License

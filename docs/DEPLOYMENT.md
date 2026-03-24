@@ -122,7 +122,7 @@ python scripts/deploy_to_hana.py
 The script performs 4 steps:
 1. **Connect** — Establishes encrypted connection to HANA Cloud via `hdbcli`
 2. **Schema** — Creates the `PROCUREMENT` schema (idempotent, handles error code 386)
-3. **Load** — Executes each table's SQL file in FK-safe order (DROP + CREATE + INSERT)
+3. **Load** — For each table: executes DDL from `output/hana/` (DROP + CREATE), then bulk-loads data from `output/csv/` via `executemany` (faster than SQL INSERT statements)
 4. **Verify** — Queries `M_TABLES` for row counts per table
 
 ### HANA Cloud SQL Details
@@ -136,9 +136,9 @@ Each table file in `output/hana/` contains:
   END;
   ```
 - `CREATE TABLE "PROCUREMENT"."table_name" (...)` — with column types, NOT NULL constraints, and a `PRIMARY KEY` clause
-- `INSERT INTO` statements in batches of 100 rows
+- `INSERT INTO` statements in batches of 100 rows (used by `_load_all_hana.sql` for manual deployment)
 
-The `_load_all_hana.sql` monolithic script concatenates all table SQL in FK-safe order (HANA has no `\i` include command).
+The deploy script (`deploy_to_hana.py`) uses only the DDL from these SQL files; data is loaded from `output/csv/` via `executemany` for better performance. The `_load_all_hana.sql` monolithic script (DDL + INSERT) is still generated for manual deployment via `hdbsql`.
 
 ### Manual Deployment
 
