@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, AsyncGenerator
+from typing import Any, AsyncGenerator, Literal
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -21,16 +22,31 @@ from graphrag.llm.router import IntentRouter
 # ── Globals ──────────────────────────────────────────────────────────────────
 
 _router: IntentRouter | None = None
+_agent: Any | None = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """Initialize backend + LLM on startup."""
-    global _router
+    """Initialize backend + LLM + agent on startup."""
+    global _router, _agent
     config = GraphRAGConfig.from_env()
     backend = get_backend(config)
     llm = GenAIHubClient(config)
     _router = IntentRouter(backend, llm)
+
+    # Agent mode (optional — requires langgraph)
+    try:
+        from graphrag.llm.agent import create_procurement_agent
+
+        _agent = create_procurement_agent(backend, config)
+        print("Agent mode: available", file=sys.stderr)
+    except ImportError:
+        _agent = None
+        print("Agent mode: unavailable (install with: pip install -e '.[graphrag-agent]')", file=sys.stderr)
+    except Exception as exc:
+        _agent = None
+        print(f"Agent mode: failed to initialize ({exc})", file=sys.stderr)
+
     yield
 
 
@@ -55,6 +71,7 @@ class ChatRequest(BaseModel):
     question: str
     stream: bool = False
     include_trace: bool = False
+    mode: Literal["router", "agent"] = "router"
 
 
 class ChatResponse(BaseModel):
@@ -70,11 +87,32 @@ class ChatResponse(BaseModel):
 
 @app.get("/health")
 async def health() -> dict:
-    return {"status": "ok"}
+    return {"status": "ok", "agent_available": _agent is not None}
 
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest) -> ChatResponse | StreamingResponse:
+    # ── Agent mode ──────────────────────────────────────────────────────
+    if req.mode == "agent":
+        if _agent is None:
+            raise HTTPException(
+                400,
+                "Agent mode requires langgraph. "
+                "Install with: pip install -e '.[graphrag-agent]'",
+            )
+        if req.stream:
+            raise HTTPException(
+                400, "Streaming is not supported in agent mode. Use mode='router' for streaming."
+            )
+
+        from graphrag.llm.agent import run_agent_with_trace
+
+        result, trace = run_agent_with_trace(_agent, req.question)
+        if req.include_trace:
+            result["trace"] = trace.to_dict()
+        return ChatResponse(**result)
+
+    # ── Router mode ─────────────────────────────────────────────────────
     assert _router is not None, "Router not initialized"
 
     if req.stream:
@@ -86,11 +124,9 @@ async def chat(req: ChatRequest) -> ChatResponse | StreamingResponse:
         messages = build_rag_messages(req.question, context)
 
         if req.include_trace:
-            # For streaming + trace: stream tokens, then send trace as final event
             from graphrag.observability.trace import (
                 QueryTrace,
                 Span,
-                TracingLLMProxy,
                 _now_ms,
             )
 
@@ -130,7 +166,7 @@ async def chat(req: ChatRequest) -> ChatResponse | StreamingResponse:
 
         return StreamingResponse(generate(), media_type="text/event-stream")
 
-    # Non-streaming
+    # Non-streaming router
     if req.include_trace:
         result, trace = _router.answer_with_trace(req.question)
         result["trace"] = trace.to_dict()

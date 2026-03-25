@@ -41,6 +41,11 @@ graphrag-hana = [
     "procurement-data-generator[graphrag]",
     "hdbcli>=2.18",
 ]
+graphrag-agent = [
+    "procurement-data-generator[graphrag]",
+    "langgraph>=0.4",
+    "langchain-core>=0.3",
+]
 
 [project.scripts]
 procurement-generator = "procurement_generator.cli:main"

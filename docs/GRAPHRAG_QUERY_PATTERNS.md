@@ -8,11 +8,28 @@ Written for readers who may be new to procurement processes.
 
 ## How It Works
 
+The system supports two modes:
+
+### Router Mode (default)
+
 When you ask a question:
 
 1. **Classify** — An LLM reads your question and picks one of the 22 patterns below, along with any entity ID you mentioned (e.g., `VND-HOKUYO`, `PO-000001`)
 2. **Retrieve** — The system runs a pre-defined graph traversal or database query for that pattern
 3. **Generate** — The retrieved data is formatted as structured text and given to the LLM, which writes a natural language answer grounded in that data
+
+This is fast (~14s) but limited to one pattern per question.
+
+### Agent Mode (opt-in)
+
+For complex questions requiring multiple tools:
+
+1. **Reason** — A ReAct agent (LangGraph + gpt-5) reads your question and decides which tool(s) to call
+2. **Execute** — The agent calls one or more of the 16 tools below, observes results
+3. **Iterate** — The agent reasons about the results and decides if it needs more information, calling additional tools as needed
+4. **Answer** — Once the agent has enough context, it synthesizes a final answer
+
+This handles multi-step questions like "Which vendors supply lidar sensors and what are their risk scores?" (requires: search → get vendors → get profiles → synthesize). Toggle via the Agent button in the UI header or `"mode": "agent"` in the API.
 
 ---
 

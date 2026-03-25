@@ -8,7 +8,7 @@ import { useChat } from "./hooks/useChat";
 import { useGraph } from "./hooks/useGraph";
 
 export default function App() {
-  const { messages, loading, send, currentTrace } = useChat();
+  const { messages, loading, send, currentTrace, mode, setMode } = useChat();
   const { elements, highlightedIds, addFromTrace, clear } = useGraph();
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
 
@@ -19,7 +19,7 @@ export default function App() {
 
   return (
     <div className="h-screen flex flex-col">
-      <Header />
+      <Header mode={mode} onModeChange={setMode} />
       <div className="flex-1 grid grid-cols-[350px_1fr_350px] min-h-0 relative">
         <ChatPanel
           messages={messages}

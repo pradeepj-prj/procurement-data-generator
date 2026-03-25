@@ -52,6 +52,7 @@ class GraphRAGConfig:
     aicore_resource_group: str = "default"
     aicore_base_url: str = ""
     genai_model_name: str = "anthropic--claude-4.6-opus"
+    agent_model_name: str = "gpt-5"
 
     @classmethod
     def from_env(cls) -> GraphRAGConfig:
@@ -72,6 +73,7 @@ class GraphRAGConfig:
             aicore_resource_group=os.environ.get("AICORE_RESOURCE_GROUP", "default"),
             aicore_base_url=os.environ.get("AICORE_BASE_URL", ""),
             genai_model_name=os.environ.get("GENAI_MODEL_NAME", "gpt-4o"),
+            agent_model_name=os.environ.get("AGENT_MODEL_NAME", "gpt-5"),
         )
 
 

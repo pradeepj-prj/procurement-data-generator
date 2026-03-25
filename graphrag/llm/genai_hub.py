@@ -108,26 +108,38 @@ class GenAIHubClient:
             SystemMessage,
             UserMessage,
             AssistantMessage,
+            ToolChatMessage,
         )
 
-        role_map = {
-            "system": SystemMessage,
-            "user": UserMessage,
-            "assistant": AssistantMessage,
-        }
         result = []
         for msg in messages:
-            cls = role_map.get(msg["role"])
-            if cls is None:
-                raise ValueError(f"Unknown message role: {msg['role']}")
-            result.append(cls(content=msg["content"]))
+            role = msg["role"]
+            if role == "system":
+                result.append(SystemMessage(content=msg["content"]))
+            elif role == "user":
+                result.append(UserMessage(content=msg["content"]))
+            elif role == "assistant":
+                kwargs: dict[str, Any] = {"content": msg.get("content") or ""}
+                if "tool_calls" in msg and msg["tool_calls"]:
+                    kwargs["tool_calls"] = msg["tool_calls"]
+                result.append(AssistantMessage(**kwargs))
+            elif role == "tool":
+                result.append(ToolChatMessage(
+                    content=msg["content"],
+                    tool_call_id=msg["tool_call_id"],
+                ))
+            else:
+                raise ValueError(f"Unknown message role: {role}")
         return result
 
     @staticmethod
     def _create_content_filter() -> Any:
         """Create Azure Content Safety filter config for input and output."""
-        from gen_ai_hub.orchestration_v2.models.content_filtering import (
+        from gen_ai_hub.orchestration_v2.models.content_filter import (
             ContentFilter,
+            ContentFilterProvider,
+        )
+        from gen_ai_hub.orchestration_v2.models.content_filtering import (
             FilteringModuleConfig,
             InputFiltering,
             OutputFiltering,
@@ -143,7 +155,10 @@ class GenAIHubClient:
             self_harm=AzureThreshold.ALLOW_SAFE_LOW_MEDIUM,
             sexual=AzureThreshold.ALLOW_SAFE_LOW_MEDIUM,
         )
-        content_filter = ContentFilter(filters=[azure_filter])
+        content_filter = ContentFilter(
+            type=ContentFilterProvider.AZURE,
+            config=azure_filter,
+        )
 
         return FilteringModuleConfig(
             input=InputFiltering(filters=[content_filter]),

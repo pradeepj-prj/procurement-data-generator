@@ -221,3 +221,10 @@ Open http://localhost:3000 and follow each scenario's query sequence. The graph 
 - Expand the trace panel to show the classify → retrieve → generate pipeline
 - Click on nodes in the graph to highlight them
 - The chat panel preserves history, so you can scroll back to show the progression
+
+**Agent mode bonus:** For each scenario, try the final "synthesis" question in Agent mode (click the purple Agent button in the header). For example:
+- Scenario 1: "Find all blocked invoices from VND-MOLEX-SG and check their vendor's quality history" — the agent will chain search → invoice context → vendor profile automatically
+- Scenario 2: "Which critical materials at MY01 are single-sourced from high-risk vendors?" — the agent will chain plant materials → material vendors → vendor profiles
+- Scenario 3: "Find maverick POs from VND-NIDEC-JP and check if they have active contracts" — the agent will chain PO filter → vendor contracts → compare
+
+The trace panel will show each reasoning step and tool call in the agent's ReAct loop.
