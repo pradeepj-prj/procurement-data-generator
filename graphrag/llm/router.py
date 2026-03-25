@@ -10,6 +10,13 @@ from typing import Any
 from graphrag.backends.protocol import GraphBackend
 from graphrag.llm.genai_hub import GenAIHubClient
 from graphrag.llm.prompts import build_rag_messages, build_router_messages
+from graphrag.observability.trace import (
+    QueryTrace,
+    Span,
+    TracingBackendProxy,
+    TracingLLMProxy,
+    _now_ms,
+)
 from graphrag.retrieval import context_formatter as fmt
 
 
@@ -21,6 +28,7 @@ class QueryIntent:
     entity_id: str | None = None
     entity_type: str | None = None
     search_query: str | None = None
+    filter_params: dict | None = None
 
 
 class IntentRouter:
@@ -46,6 +54,7 @@ class IntentRouter:
                 entity_id=data.get("entity_id"),
                 entity_type=data.get("entity_type"),
                 search_query=data.get("search_query"),
+                filter_params=data.get("filter_params"),
             )
         except (json.JSONDecodeError, KeyError):
             # Fallback: try to extract entity IDs from the question
@@ -77,14 +86,29 @@ class IntentRouter:
         # Keyword-based fallback
         if "invoice" in q and ("issue" in q or "problem" in q or "mismatch" in q):
             return QueryIntent(pattern="invoice_issues")
+        if "spend" in q and "vendor" in q:
+            return QueryIntent(pattern="spend_by_vendor")
+        if "spend" in q and "categor" in q:
+            return QueryIntent(pattern="spend_by_category")
+        if "maverick" in q or ("filter" in q and "po" in q):
+            fp: dict[str, Any] = {}
+            if "maverick" in q:
+                fp["maverick"] = True
+            return QueryIntent(pattern="po_filter", filter_params=fp)
+        if "aging" in q:
+            return QueryIntent(pattern="invoice_aging")
+        if "overdue" in q or "past due" in q:
+            return QueryIntent(pattern="overdue_invoices")
+        if "risk" in q and "vendor" in q:
+            return QueryIntent(pattern="vendor_risk")
         if "summary" in q or "overview" in q:
             return QueryIntent(pattern="summary")
 
         return QueryIntent(pattern="search", search_query=question)
 
-    def retrieve(self, intent: QueryIntent) -> str:
+    def retrieve(self, intent: QueryIntent, backend: Any = None) -> str:
         """Execute the graph query for a classified intent and format results."""
-        b = self._backend
+        b = backend or self._backend
         eid = intent.entity_id
 
         match intent.pattern:
@@ -133,6 +157,30 @@ class IntentRouter:
             case "summary":
                 data = b.get_summary()
                 return fmt.format_entity(data)
+            case "spend_by_vendor":
+                items = b.get_spend_by_vendor(top_n=10)
+                return fmt.format_spend_table(items, "Top Vendors by Spend")
+            case "spend_by_category":
+                items = b.get_spend_by_category(top_n=10)
+                return fmt.format_spend_table(items, "Spend by Category")
+            case "po_filter":
+                fp = intent.filter_params or {}
+                items = b.get_pos_by_filter(
+                    status=fp.get("status"),
+                    maverick=fp.get("maverick"),
+                    min_value=fp.get("min_value"),
+                    max_value=fp.get("max_value"),
+                )
+                return fmt.format_po_list(items)
+            case "invoice_aging":
+                items = b.get_invoice_aging()
+                return fmt.format_invoice_aging(items)
+            case "overdue_invoices":
+                items = b.get_overdue_invoices()
+                return fmt.format_po_list(items)
+            case "vendor_risk":
+                items = b.get_vendor_risk_summary()
+                return fmt.format_vendor_risk(items)
             case "search" | _:
                 query = intent.search_query or (eid if eid else "")
                 items = b.search_entities(query, intent.entity_type)
@@ -160,6 +208,80 @@ class IntentRouter:
             "query_pattern": intent.pattern,
             "context_snippet": context[:500],
         }
+
+    def answer_with_trace(
+        self, question: str, history: list[dict] | None = None
+    ) -> tuple[dict, QueryTrace]:
+        """Full RAG pipeline with structured tracing."""
+        trace = QueryTrace(question=question)
+        overall_start = _now_ms()
+
+        # ── Classify ────────────────────────────────────────────────────
+        classify_span = Span(name="classify", start_ms=_now_ms())
+        intent = self.classify(question)
+        classify_span.end_ms = _now_ms()
+        classify_span.metadata = {
+            "pattern": intent.pattern,
+            "entity_id": intent.entity_id,
+            "entity_type": intent.entity_type,
+            "search_query": intent.search_query,
+        }
+        trace.intent = classify_span.metadata.copy()
+        trace.spans.append(classify_span)
+
+        # ── Retrieve ────────────────────────────────────────────────────
+        retrieve_span = Span(name="retrieve", start_ms=_now_ms())
+        proxy = TracingBackendProxy(self._backend, retrieve_span)
+        context = self.retrieve(intent, backend=proxy)
+        retrieve_span.end_ms = _now_ms()
+        retrieve_span.metadata["backend_calls"] = len(retrieve_span.children)
+
+        # Deduplicate graph nodes and edges
+        trace.graph_nodes = sorted(set(proxy.graph_nodes))
+        seen_edges: set[tuple[str, str, str]] = set()
+        for e in proxy.graph_edges:
+            key = (e["source"], e["target"], e["edge_type"])
+            if key not in seen_edges:
+                seen_edges.add(key)
+                trace.graph_edges.append(e)
+
+        trace.context_snippet = context[:500]
+        trace.spans.append(retrieve_span)
+
+        # ── Generate ────────────────────────────────────────────────────
+        generate_span = Span(name="generate", start_ms=_now_ms())
+        messages = build_rag_messages(question, context, history)
+        llm_proxy = TracingLLMProxy(self._llm)
+        answer_text = llm_proxy.chat(messages, span=generate_span)
+        generate_span.end_ms = _now_ms()
+        trace.spans.append(generate_span)
+
+        # Populate LLM metadata on trace
+        trace.llm_request = {
+            "model": llm_proxy.model_name,
+            "message_count": len(messages),
+            "estimated_prompt_tokens": generate_span.metadata.get(
+                "estimated_prompt_tokens", 0
+            ),
+        }
+        trace.llm_response = {
+            "estimated_tokens": generate_span.metadata.get(
+                "estimated_response_tokens", 0
+            ),
+            "latency_ms": generate_span.metadata.get("latency_ms", 0),
+        }
+
+        # Finalize
+        trace.total_ms = _now_ms() - overall_start
+        sources = _extract_entity_ids(answer_text)
+
+        result = {
+            "answer": answer_text,
+            "sources": sources,
+            "query_pattern": intent.pattern,
+            "context_snippet": context[:500],
+        }
+        return result, trace
 
 
 def _extract_entity_ids(text: str) -> list[str]:

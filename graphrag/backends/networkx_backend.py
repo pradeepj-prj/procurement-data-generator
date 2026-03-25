@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pickle
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -10,6 +11,12 @@ import networkx as nx
 import pandas as pd
 
 from graphrag.config import GraphRAGConfig
+
+# Tables needed for relational queries (loaded with default dtype inference)
+_RELATIONAL_TABLES = [
+    "vendor_master", "po_header", "po_line_item", "invoice_header",
+    "payment", "payment_invoice_link", "material_master", "category_hierarchy",
+]
 
 # ── CSV → Node mappings ─────────────────────────────────────────────────────
 # Each entry: (csv_file, id_column, vertex_type, label_column, extra_columns)
@@ -101,6 +108,7 @@ class NetworkXGraphBackend:
         self._csv_dir = Path(config.csv_dir)
         self._pickle_path = Path(config.graph_pickle)
         self._graph: nx.MultiDiGraph = self._load_or_build()
+        self._tables: dict[str, pd.DataFrame] = self._load_tables()
 
     # ── Graph construction ───────────────────────────────────────────────────
 
@@ -170,6 +178,19 @@ class NetworkXGraphBackend:
         """Load a pickled graph."""
         with open(path, "rb") as f:
             return pickle.load(f)  # noqa: S301
+
+    def _load_tables(self) -> dict[str, pd.DataFrame]:
+        """Load CSV tables with default dtype inference for relational queries."""
+        tables: dict[str, pd.DataFrame] = {}
+        for name in _RELATIONAL_TABLES:
+            csv_path = self._csv_dir / f"{name}.csv"
+            if csv_path.exists():
+                tables[name] = pd.read_csv(csv_path)
+        return tables
+
+    def _get_table(self, name: str) -> pd.DataFrame:
+        """Get a loaded table, returning empty DataFrame if not found."""
+        return self._tables.get(name, pd.DataFrame())
 
     # ── Protocol implementation ──────────────────────────────────────────────
 
@@ -440,6 +461,109 @@ class NetworkXGraphBackend:
             "vertex_counts": vertex_counts,
             "edge_counts": edge_counts,
         }
+
+    # ── Relational queries ────────────────────────────────────────────────
+
+    def get_spend_by_vendor(self, top_n: int = 10) -> list[dict]:
+        po = self._get_table("po_header")
+        vm = self._get_table("vendor_master")
+        if po.empty or vm.empty:
+            return []
+        merged = po.merge(vm[["vendor_id", "vendor_name"]], on="vendor_id", how="left")
+        grouped = (
+            merged.groupby(["vendor_id", "vendor_name"])
+            .agg(total_spend=("total_net_value", "sum"), po_count=("po_id", "count"))
+            .reset_index()
+            .sort_values("total_spend", ascending=False)
+            .head(top_n)
+        )
+        return grouped.to_dict("records")
+
+    def get_spend_by_category(self, top_n: int = 10) -> list[dict]:
+        pli = self._get_table("po_line_item")
+        mm = self._get_table("material_master")
+        ch = self._get_table("category_hierarchy")
+        if pli.empty or mm.empty or ch.empty:
+            return []
+        merged = pli.merge(mm[["material_id", "category_id"]], on="material_id", how="left")
+        merged = merged.merge(ch[["category_id", "category_name"]], on="category_id", how="left")
+        grouped = (
+            merged.groupby(["category_id", "category_name"])
+            .agg(total_spend=("net_value", "sum"), item_count=("po_line_number", "count"))
+            .reset_index()
+            .sort_values("total_spend", ascending=False)
+            .head(top_n)
+        )
+        return grouped.to_dict("records")
+
+    def get_pos_by_filter(
+        self,
+        status: str | None = None,
+        maverick: bool | None = None,
+        min_value: float | None = None,
+        max_value: float | None = None,
+        limit: int = 20,
+    ) -> list[dict]:
+        po = self._get_table("po_header")
+        vm = self._get_table("vendor_master")
+        if po.empty:
+            return []
+        df = po.copy()
+        if status:
+            df = df[df["status"].str.upper() == status.upper()]
+        if maverick is not None:
+            df = df[df["maverick_flag"] == maverick]
+        if min_value is not None:
+            df = df[df["total_net_value"] >= min_value]
+        if max_value is not None:
+            df = df[df["total_net_value"] <= max_value]
+        df = df.sort_values("total_net_value", ascending=False).head(limit)
+        if not vm.empty:
+            df = df.merge(vm[["vendor_id", "vendor_name"]], on="vendor_id", how="left")
+        return df.to_dict("records")
+
+    def get_invoice_aging(self) -> list[dict]:
+        inv = self._get_table("invoice_header")
+        if inv.empty:
+            return []
+        grouped = (
+            inv.groupby("match_status")
+            .agg(count=("invoice_id", "count"), total_amount=("total_net_amount", "sum"))
+            .reset_index()
+            .sort_values("count", ascending=False)
+        )
+        return grouped.to_dict("records")
+
+    def get_overdue_invoices(self, limit: int = 20) -> list[dict]:
+        inv = self._get_table("invoice_header")
+        vm = self._get_table("vendor_master")
+        if inv.empty:
+            return []
+        df = inv.copy()
+        df["payment_due_date"] = pd.to_datetime(df["payment_due_date"], errors="coerce")
+        today = pd.Timestamp(date.today())
+        df = df[
+            (df["payment_due_date"] < today)
+            & (df["status"].str.upper() != "PAID")
+        ]
+        df = df.sort_values("payment_due_date").head(limit)
+        if not vm.empty:
+            df = df.merge(vm[["vendor_id", "vendor_name"]], on="vendor_id", how="left")
+        return df.to_dict("records")
+
+    def get_vendor_risk_summary(self, threshold: float = 3.0) -> list[dict]:
+        vm = self._get_table("vendor_master")
+        if vm.empty:
+            return []
+        df = vm[vm["risk_score"] > threshold].copy()
+        df = df.sort_values("risk_score", ascending=False)
+        cols = [
+            c for c in [
+                "vendor_id", "vendor_name", "risk_score", "quality_score",
+                "on_time_delivery_rate", "esg_score", "status", "country",
+            ] if c in df.columns
+        ]
+        return df[cols].to_dict("records")
 
 
 def _coerce_value(val: str) -> str | int | float | bool | None:

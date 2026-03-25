@@ -48,6 +48,12 @@ Query patterns:
 - vendor_pos: POs for a vendor
 - category_tree: Category hierarchy and materials
 - vendor_plant_contracts: Vendors at a plant with their contracts
+- spend_by_vendor: Top vendors by total PO spend
+- spend_by_category: Spend breakdown by material category
+- po_filter: Filter POs by status, maverick flag, or value range
+- invoice_aging: Invoice aging summary by match status
+- overdue_invoices: Invoices past due date
+- vendor_risk: High-risk vendors above a threshold
 - search: General search for entities by name/description
 - summary: Overview of the knowledge graph
 

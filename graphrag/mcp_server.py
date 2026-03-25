@@ -1,4 +1,4 @@
-"""MCP server — 10 tools exposing the procurement knowledge graph."""
+"""MCP server — 16 tools exposing the procurement knowledge graph."""
 
 from __future__ import annotations
 
@@ -110,6 +110,61 @@ def get_graph_summary() -> str:
     for etype, count in sorted(data.get("edge_counts", {}).items()):
         lines.append(f"  {etype}: {count}")
     return "\n".join(lines)
+
+
+# ── Relational tools ─────────────────────────────────────────────────────────
+
+
+@mcp.tool()
+def get_top_vendors_by_spend(top_n: int = 10) -> str:
+    """Get the top vendors ranked by total PO spend."""
+    items = _get_backend().get_spend_by_vendor(top_n)
+    return fmt.format_spend_table(items, "Top Vendors by Spend")
+
+
+@mcp.tool()
+def get_spend_by_category(top_n: int = 10) -> str:
+    """Get spend breakdown aggregated by material category."""
+    items = _get_backend().get_spend_by_category(top_n)
+    return fmt.format_spend_table(items, "Spend by Category")
+
+
+@mcp.tool()
+def filter_purchase_orders(
+    status: str | None = None,
+    maverick_only: bool = False,
+    min_value: float | None = None,
+    max_value: float | None = None,
+) -> str:
+    """Filter purchase orders by status, maverick flag, and/or value range."""
+    items = _get_backend().get_pos_by_filter(
+        status=status,
+        maverick=True if maverick_only else None,
+        min_value=min_value,
+        max_value=max_value,
+    )
+    return fmt.format_po_list(items)
+
+
+@mcp.tool()
+def get_invoice_aging_summary() -> str:
+    """Get invoice aging summary — counts and totals grouped by match status."""
+    items = _get_backend().get_invoice_aging()
+    return fmt.format_invoice_aging(items)
+
+
+@mcp.tool()
+def get_overdue_invoices() -> str:
+    """Get invoices that are past their payment due date and not yet paid."""
+    items = _get_backend().get_overdue_invoices()
+    return fmt.format_po_list(items)
+
+
+@mcp.tool()
+def get_high_risk_vendors(risk_threshold: float = 3.0) -> str:
+    """Get vendors with risk scores above a threshold, with quality and delivery metrics."""
+    items = _get_backend().get_vendor_risk_summary(risk_threshold)
+    return fmt.format_vendor_risk(items)
 
 
 # ── Entry point ──────────────────────────────────────────────────────────────

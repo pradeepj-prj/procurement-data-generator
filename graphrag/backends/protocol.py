@@ -72,3 +72,36 @@ class GraphBackend(Protocol):
     def get_summary(self) -> dict:
         """Vertex/edge counts by type."""
         ...
+
+    # ── Relational queries ────────────────────────────────────────────────
+
+    def get_spend_by_vendor(self, top_n: int = 10) -> list[dict]:
+        """Top vendors by total PO spend."""
+        ...
+
+    def get_spend_by_category(self, top_n: int = 10) -> list[dict]:
+        """Spend aggregated by material category."""
+        ...
+
+    def get_pos_by_filter(
+        self,
+        status: str | None = None,
+        maverick: bool | None = None,
+        min_value: float | None = None,
+        max_value: float | None = None,
+        limit: int = 20,
+    ) -> list[dict]:
+        """Filter POs by status, maverick flag, and/or value range."""
+        ...
+
+    def get_invoice_aging(self) -> list[dict]:
+        """Invoice aging summary: counts by match_status."""
+        ...
+
+    def get_overdue_invoices(self, limit: int = 20) -> list[dict]:
+        """Invoices past due (payment_due_date < today, not fully paid)."""
+        ...
+
+    def get_vendor_risk_summary(self, threshold: float = 3.0) -> list[dict]:
+        """Vendors with risk_score above threshold."""
+        ...

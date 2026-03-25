@@ -16,6 +16,10 @@ class GenAIHubClient:
         self._configure_env(config)
         self._service, self._model = self._create_service()
 
+    @property
+    def model_name(self) -> str:
+        return self._model_name
+
     @staticmethod
     def _configure_env(config: GraphRAGConfig) -> None:
         """Set env vars required by sap-ai-sdk-gen."""

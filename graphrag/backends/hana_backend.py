@@ -363,6 +363,98 @@ class HanaGraphBackend:
             "edge_counts": edge_counts,
         }
 
+    # ── Relational queries ────────────────────────────────────────────────
+
+    def get_spend_by_vendor(self, top_n: int = 10) -> list[dict]:
+        return self._q(
+            f'''SELECT v.vendor_id, v.vendor_name, SUM(p.total_net_value) AS total_spend,
+                       COUNT(DISTINCT p.po_id) AS po_count
+                FROM "{self._s}"."po_header" p
+                JOIN "{self._s}"."vendor_master" v ON v.vendor_id = p.vendor_id
+                GROUP BY v.vendor_id, v.vendor_name
+                ORDER BY total_spend DESC
+                LIMIT ?''',
+            (top_n,),
+        )
+
+    def get_spend_by_category(self, top_n: int = 10) -> list[dict]:
+        return self._q(
+            f'''SELECT ch.category_id, ch.category_name,
+                       SUM(pli.net_value) AS total_spend,
+                       COUNT(*) AS item_count
+                FROM "{self._s}"."po_line_item" pli
+                JOIN "{self._s}"."material_master" mm ON mm.material_id = pli.material_id
+                JOIN "{self._s}"."category_hierarchy" ch ON ch.category_id = mm.category_id
+                GROUP BY ch.category_id, ch.category_name
+                ORDER BY total_spend DESC
+                LIMIT ?''',
+            (top_n,),
+        )
+
+    def get_pos_by_filter(
+        self,
+        status: str | None = None,
+        maverick: bool | None = None,
+        min_value: float | None = None,
+        max_value: float | None = None,
+        limit: int = 20,
+    ) -> list[dict]:
+        conditions: list[str] = []
+        params: list[Any] = []
+        if status:
+            conditions.append("p.status = ?")
+            params.append(status.upper())
+        if maverick is not None:
+            conditions.append("p.maverick_flag = ?")
+            params.append(maverick)
+        if min_value is not None:
+            conditions.append("p.total_net_value >= ?")
+            params.append(min_value)
+        if max_value is not None:
+            conditions.append("p.total_net_value <= ?")
+            params.append(max_value)
+        where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        params.append(limit)
+        return self._q(
+            f'''SELECT p.*, v.vendor_name
+                FROM "{self._s}"."po_header" p
+                LEFT JOIN "{self._s}"."vendor_master" v ON v.vendor_id = p.vendor_id
+                {where}
+                ORDER BY p.total_net_value DESC
+                LIMIT ?''',
+            tuple(params),
+        )
+
+    def get_invoice_aging(self) -> list[dict]:
+        return self._q(
+            f'''SELECT match_status, COUNT(*) AS count,
+                       SUM(total_net_amount) AS total_amount
+                FROM "{self._s}"."invoice_header"
+                GROUP BY match_status
+                ORDER BY count DESC''',
+        )
+
+    def get_overdue_invoices(self, limit: int = 20) -> list[dict]:
+        return self._q(
+            f'''SELECT i.*, v.vendor_name
+                FROM "{self._s}"."invoice_header" i
+                LEFT JOIN "{self._s}"."vendor_master" v ON v.vendor_id = i.vendor_id
+                WHERE i.payment_due_date < CURRENT_DATE AND i.status != 'PAID'
+                ORDER BY i.payment_due_date ASC
+                LIMIT ?''',
+            (limit,),
+        )
+
+    def get_vendor_risk_summary(self, threshold: float = 3.0) -> list[dict]:
+        return self._q(
+            f'''SELECT vendor_id, vendor_name, risk_score, quality_score,
+                       on_time_delivery_rate, esg_score, status, country
+                FROM "{self._s}"."vendor_master"
+                WHERE risk_score > ?
+                ORDER BY risk_score DESC''',
+            (threshold,),
+        )
+
 
 # View name → primary key column for entity lookup
 _TYPED_VIEWS: list[tuple[str, str]] = [

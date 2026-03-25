@@ -243,6 +243,79 @@ def format_vendor_plant_contracts(items: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def format_spend_table(items: list[dict], title: str = "Spend Summary") -> str:
+    """Format spend aggregation results as a ranked table."""
+    if not items:
+        return f"No {title.lower()} data found."
+    lines = [f"## {title} ({len(items)})"]
+    for i, item in enumerate(items, 1):
+        name = item.get("vendor_name", item.get("category_name", "Unknown"))
+        vid = item.get("vendor_id", item.get("category_id", ""))
+        spend = item.get("total_spend", 0)
+        count = item.get("po_count", item.get("item_count", 0))
+        lines.append(f"  {i}. {name} ({vid})")
+        lines.append(f"     Spend: {_fmt_currency(spend)} | Count: {count}")
+    return "\n".join(lines)
+
+
+def format_po_list(items: list[dict]) -> str:
+    """Format a list of POs with key attributes."""
+    if not items:
+        return "No purchase orders found."
+    lines = [f"## Purchase Orders ({len(items)})"]
+    for item in items[:20]:
+        po_id = item.get("po_id", "?")
+        vendor = item.get("vendor_name", item.get("vendor_id", "?"))
+        value = item.get("total_net_value", 0)
+        status = item.get("status", "?")
+        maverick = item.get("maverick_flag", False)
+        mav_tag = " [MAVERICK]" if maverick else ""
+        lines.append(f"  - {po_id} | {vendor} | {_fmt_currency(value)} | {status}{mav_tag}")
+    if len(items) > 20:
+        lines.append(f"  ... and {len(items) - 20} more")
+    return "\n".join(lines)
+
+
+def format_invoice_aging(items: list[dict]) -> str:
+    """Format invoice aging by match status."""
+    if not items:
+        return "No invoice aging data found."
+    lines = ["## Invoice Aging by Match Status"]
+    for item in items:
+        status = item.get("match_status", "Unknown")
+        count = item.get("count", 0)
+        total = item.get("total_amount", 0)
+        lines.append(f"  - {status}: {count} invoices, total {_fmt_currency(total)}")
+    return "\n".join(lines)
+
+
+def format_vendor_risk(items: list[dict]) -> str:
+    """Format high-risk vendor summary."""
+    if not items:
+        return "No high-risk vendors found."
+    lines = [f"## High-Risk Vendors ({len(items)})"]
+    for item in items:
+        vid = item.get("vendor_id", "?")
+        name = item.get("vendor_name", "?")
+        risk = _fmt(item.get("risk_score"))
+        quality = _fmt(item.get("quality_score"))
+        otd = _fmt(item.get("on_time_delivery_rate"))
+        esg = _fmt(item.get("esg_score"))
+        lines.append(f"  - {name} ({vid})")
+        lines.append(f"    Risk: {risk} | Quality: {quality} | On-Time: {otd}% | ESG: {esg}")
+    return "\n".join(lines)
+
+
+def _fmt_currency(val: Any) -> str:
+    """Format a numeric value as currency."""
+    if val is None:
+        return "N/A"
+    try:
+        return f"${float(val):,.2f}"
+    except (ValueError, TypeError):
+        return str(val)
+
+
 def _fmt(val: Any) -> str:
     """Format a value for display, handling None."""
     if val is None:

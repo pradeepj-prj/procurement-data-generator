@@ -1,0 +1,12 @@
+applications:
+  - name: procurement-graphrag
+    memory: 512M
+    disk_quota: 1G
+    buildpacks:
+      - python_buildpack
+    command: python -m graphrag.api --host 0.0.0.0 --port $PORT
+    env:
+      GRAPH_BACKEND: hana
+      HANA_SCHEMA: PROCUREMENT
+      HANA_PORT: "443"
+      AICORE_RESOURCE_GROUP: default
