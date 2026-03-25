@@ -271,6 +271,10 @@ class IntentRouter:
             "latency_ms": generate_span.metadata.get("latency_ms", 0),
         }
 
+        # Pipeline details (masking/filtering)
+        if llm_proxy.pipeline_details:
+            trace.pipeline = llm_proxy.pipeline_details
+
         # Finalize
         trace.total_ms = _now_ms() - overall_start
         sources = _extract_entity_ids(answer_text)

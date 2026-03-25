@@ -159,6 +159,60 @@ export function TracePanel({ trace }: Props) {
           </div>
         </div>
 
+        {/* Safety Pipeline */}
+        {trace.pipeline && (trace.pipeline.data_masking || trace.pipeline.content_filtering) && (
+          <div>
+            <div className="text-xs text-gray-400 mb-1 font-medium">
+              Safety Pipeline
+            </div>
+            <div className="text-xs space-y-2">
+              {/* Data Masking */}
+              {trace.pipeline.data_masking && (
+                <div className="bg-gray-900 p-2 rounded">
+                  <div className="text-gray-400 mb-1 font-medium">Data Masking</div>
+                  {trace.pipeline.data_masking.entities_masked.length > 0 ? (
+                    <>
+                      <div className="flex flex-wrap gap-1 mb-1">
+                        {trace.pipeline.data_masking.entities_masked.map((e, i) => (
+                          <span key={i} className="px-1.5 py-0.5 bg-amber-900/50 text-amber-300 rounded text-[10px]">
+                            {e}
+                          </span>
+                        ))}
+                      </div>
+                      {trace.pipeline.data_masking.client_side_masked && (
+                        <div className="text-gray-500 text-[10px]">Client-side masked</div>
+                      )}
+                      <div className="mt-1 text-gray-500">
+                        <div className="truncate">Original: <span className="text-red-400">{trace.pipeline.data_masking.original_query.slice(-60)}</span></div>
+                        <div className="truncate">Masked: <span className="text-green-400">{trace.pipeline.data_masking.masked_query.slice(-60)}</span></div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-gray-600">No PII detected</div>
+                  )}
+                </div>
+              )}
+
+              {/* Content Filtering */}
+              {trace.pipeline.content_filtering && (
+                <div className="bg-gray-900 p-2 rounded">
+                  <div className="text-gray-400 mb-1 font-medium">Content Filtering</div>
+                  {trace.pipeline.content_filtering.blocked ? (
+                    <div className="text-red-400">
+                      Blocked by: {trace.pipeline.content_filtering.blocked_by}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-green-400" />
+                      <span className="text-green-400">Input &amp; output passed</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Context snippet */}
         {trace.context_snippet && (
           <div>

@@ -91,6 +91,7 @@ class QueryTrace:
     context_snippet: str = ""
     llm_request: dict[str, Any] = field(default_factory=dict)
     llm_response: dict[str, Any] = field(default_factory=dict)
+    pipeline: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -104,6 +105,7 @@ class QueryTrace:
             "context_snippet": self.context_snippet,
             "llm_request": self.llm_request,
             "llm_response": self.llm_response,
+            "pipeline": self.pipeline,
         }
 
 
@@ -249,19 +251,30 @@ class TracingBackendProxy:
 
 
 class TracingLLMProxy:
-    """Wraps a GenAIHubClient to record timing and token estimates."""
+    """Wraps a GenAIHubClient to record timing, token estimates, and pipeline details."""
 
     def __init__(self, llm: Any) -> None:
         self._llm = llm
+        self.pipeline_details: dict[str, Any] = {}
 
     @property
     def model_name(self) -> str:
         return getattr(self._llm, "model_name", "unknown")
 
     def chat(self, messages: list[dict], span: Span | None = None) -> str:
-        """Call chat() and record metadata in the provided span."""
+        """Call chat() and record metadata in the provided span.
+
+        Uses chat_with_pipeline() if available to capture masking/filtering
+        details; falls back to plain chat() for mock LLMs in tests.
+        """
         start = _now_ms()
-        result = self._llm.chat(messages)
+
+        if hasattr(self._llm, "chat_with_pipeline"):
+            result, details = self._llm.chat_with_pipeline(messages)
+            self.pipeline_details = details.to_dict()
+        else:
+            result = self._llm.chat(messages)
+
         elapsed = _now_ms() - start
 
         if span is not None:

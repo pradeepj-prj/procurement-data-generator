@@ -27,6 +27,20 @@ export interface TraceResponse {
     estimated_prompt_tokens: number;
   };
   llm_response: { estimated_tokens: number; latency_ms: number };
+  pipeline?: {
+    data_masking?: {
+      original_query: string;
+      masked_query: string;
+      entities_masked: string[];
+      client_side_masked: boolean;
+    };
+    content_filtering?: {
+      input: Record<string, unknown>;
+      output: Record<string, unknown>;
+      blocked: boolean;
+      blocked_by: string | null;
+    };
+  };
 }
 
 export interface ChatResponse {
