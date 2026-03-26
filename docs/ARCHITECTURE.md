@@ -261,3 +261,92 @@ ml/
 - **SAP AI Core containers**: Training and inference Dockerfiles follow the SAP AI Core containerization pattern
 
 See `docs/ML_USE_CASES.md` for the 13 use cases and `CLAUDE.md` for ML folder conventions.
+
+## GraphRAG Application Layer
+
+The GraphRAG layer sits on top of the generated procurement data and knowledge graph, providing natural-language query capabilities through both a deterministic router and an agentic reasoning loop.
+
+```
+                    ┌─────────────────────────────────────────┐
+                    │          React UI (Vite + Tailwind)      │
+                    │  ChatPanel │ GraphView │ TracePanel       │
+                    └──────────────────┬──────────────────────┘
+                                       │ SSE / fetch
+                                       v
+                    ┌─────────────────────────────────────────┐
+                    │          FastAPI (graphrag/api.py)        │
+                    │  POST /chat  │  GET /health               │
+                    │  Router mode │  Agent mode (SSE stream)   │
+                    └───────┬──────────────┬──────────────────┘
+                            │              │
+                    ┌───────v───────┐  ┌───v────────────────┐
+                    │ IntentRouter  │  │ LangGraph ReAct    │
+                    │ (22 patterns) │  │ Agent (16 tools)   │
+                    │ classify →    │  │ reasoning → tool → │
+                    │ retrieve →    │  │ observation loop    │
+                    │ generate      │  │                     │
+                    └───────┬───────┘  └───┬────────────────┘
+                            │              │
+                    ┌───────v──────────────v──────────────────┐
+                    │         GraphBackend Protocol            │
+                    │  16 graph queries + 6 relational queries │
+                    ├─────────────────┬───────────────────────┤
+                    │  NetworkX       │  HANA Cloud            │
+                    │  (CSV → graph)  │  (SQL on views)        │
+                    └─────────────────┴───────────────────────┘
+```
+
+**Two query modes:**
+- **Router mode** — deterministic pipeline: classify user intent against 22 regex patterns, dispatch to the matching graph/relational query, format results as structured text, pass to LLM for natural-language answer generation. Fast and predictable.
+- **Agent mode** — LangGraph ReAct loop: the LLM autonomously decides which tools to call, observes results, and reasons across multiple steps before producing a final answer. Handles complex, multi-hop questions that span multiple entity types.
+
+Both modes share the same `GraphBackend` protocol, the same LLM client (SAP GenAI Hub), and the same observability layer.
+
+### Observability (`graphrag/observability/trace.py`)
+
+- `Span` dataclass: name, start/end timestamps, metadata, nested children
+- `QueryTrace`: captures full pipeline — intent classification, graph retrieval, LLM generation
+- `AgentTraceBuilder`: builds trace from LangGraph agent steps (reasoning + tool calls)
+- `TracingBackendProxy`: wraps any backend to automatically create spans for each query
+- Entity ID extraction from tool results for graph visualization
+
+### Agent Mode (`graphrag/llm/agent.py`)
+
+- LangGraph `create_react_agent` with 16 LangChain tool definitions wrapping backend methods
+- LLM transport: SAP GenAI Hub via `ChatOpenAI` proxy (not direct API — LangGraph handles reasoning)
+- Multi-step reasoning: agent decides which tools to call, observes results, reasons again
+- Conversation history: prior messages sent as `HumanMessage`/`AIMessage` for context
+- SSE streaming: `stream_agent_steps()` generator yields intermediate events as they happen
+
+### Content Filtering (`graphrag/llm/genai_hub.py`)
+
+- NRIC detection: regex-based Singapore National Registration Identity Card masking
+- Client-side masking before LLM calls
+- Pipeline metadata in trace (original query, masked query, entities masked)
+
+### React UI (`ui/`)
+
+- React 18 + TypeScript + Vite + Tailwind CSS
+- **ChatPanel**: Message display, input, `AgentStepLog` (live streaming of agent reasoning steps)
+- **GraphView**: Cytoscape.js graph with COSE layout, entity type coloring, trace highlighting
+- **TracePanel**: Span waterfall with expandable metadata, LLM stats, safety pipeline info
+- **Header**: Mode toggle (Router/Agent), health indicator
+- API client with SSE support for streaming agent events
+
+### Cloud Foundry Deployment
+
+- `manifest.yml`: Python buildpack, 1024M memory, HANA backend
+- `.cfignore`: Excludes node_modules, data generator, ML, tests, docs (~360K upload)
+- `requirements.txt`: Installs `.[graphrag-hana,graphrag-agent]` extras
+- Secrets set via `cf set-env` (HANA credentials, AI Core credentials)
+- UI served statically from `ui/dist/` by FastAPI
+
+### Technology Stack (GraphRAG additions)
+
+| Layer | Technology |
+|-------|-----------|
+| Agent framework | LangGraph + LangChain |
+| UI framework | React 18 + Cytoscape.js + Tailwind CSS |
+| Observability | Custom span tracing (QueryTrace) |
+| Deployment | Cloud Foundry (SAP BTP) |
+| Streaming | Server-Sent Events (SSE) |

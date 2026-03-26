@@ -77,6 +77,19 @@ curl -X POST http://localhost:8000/chat \
   -H "Content-Type: application/json" \
   -d '{"question": "Which vendors supply lidar sensors?", "mode": "agent", "include_trace": true}'
 
+# Agent mode with SSE streaming (live step visibility)
+curl -N -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Which vendors supply lidar sensors?", "mode": "agent", "stream": true}'
+
+# Agent mode with conversation history
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Which of those have the best quality?", "mode": "agent", "history": [{"role": "user", "content": "Which vendors supply lidar sensors?"}, {"role": "assistant", "content": "I found VND-HOKUYO, VND-00101..."}]}'
+
+# Deploy to Cloud Foundry
+bash scripts/deploy_to_cf.sh
+
 # Train UC-02 model (from CSV data)
 cd ml/uc_02_invoice_match/training
 python train.py --data-source csv --csv-dir ../../../output/csv --n-trials 50
@@ -131,7 +144,10 @@ Key generation order: org → categories → materials → legal entities → ve
 | `graphrag/mcp_server.py` | MCP server (16 tools, stdio + HTTP transport) |
 | `graphrag/api.py` | FastAPI REST endpoint (`POST /chat`, router + agent modes) |
 | `ui/` | React + TypeScript + Cytoscape.js UI (chat, graph viz, trace panel) |
-| `manifest.yml` | Cloud Foundry deployment manifest |
+| `manifest.yml` | Cloud Foundry deployment manifest (1024M, python_buildpack) |
+| `.cfignore` | CF upload exclusions (reduces ~118M → ~360K) |
+| `requirements.txt` | CF buildpack deps (`.[graphrag-hana,graphrag-agent]`) |
+| `scripts/deploy_to_cf.sh` | Build UI + `cf push` + secrets instructions |
 
 ## ML Use Cases
 
@@ -223,6 +239,9 @@ python scripts/deploy_to_hana.py --dry-run # preview only
 # 3. Deploy to EC2 Postgres
 bash scripts/deploy_to_ec2.sh             # real deploy
 bash scripts/deploy_to_ec2.sh --dry-run   # preview only
+
+# 4. Deploy GraphRAG API + UI to Cloud Foundry
+bash scripts/deploy_to_cf.sh
 ```
 
 ### Export Formats

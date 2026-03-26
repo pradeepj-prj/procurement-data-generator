@@ -204,7 +204,9 @@ Sarah's audit found: 3 maverick POs totaling $14,058 from VND-NIDEC-JP despite a
 
 ## Running the Demos
 
-Start the system:
+**Cloud Foundry (recommended):** Open the deployed app at your CF URL (e.g., `https://procurement-graphrag.cfapps.ap10.hana.ondemand.com`). Uses HANA Cloud backend with live data.
+
+**Local development:**
 ```bash
 # Terminal 1: API (NetworkX backend, no HANA needed)
 GRAPH_BACKEND=networkx uvicorn graphrag.api:app --port 8000
@@ -213,7 +215,7 @@ GRAPH_BACKEND=networkx uvicorn graphrag.api:app --port 8000
 cd ui && npm run dev
 ```
 
-Open http://localhost:3000 and follow each scenario's query sequence. The graph panel accumulates nodes across queries, building up the visual story. Use "Clear" between scenarios to reset the graph.
+Open the app and follow each scenario's query sequence. The graph panel accumulates nodes across queries, building up the visual story. Use "Clear" between scenarios to reset the graph.
 
 **Tips for presenting:**
 - Start each scenario by explaining the persona and their problem
@@ -227,4 +229,6 @@ Open http://localhost:3000 and follow each scenario's query sequence. The graph 
 - Scenario 2: "Which critical materials at MY01 are single-sourced from high-risk vendors?" — the agent will chain plant materials → material vendors → vendor profiles
 - Scenario 3: "Find maverick POs from VND-NIDEC-JP and check if they have active contracts" — the agent will chain PO filter → vendor contracts → compare
 
-The trace panel will show each reasoning step and tool call in the agent's ReAct loop.
+The chat panel shows **live step visibility** in agent mode — instead of "Thinking...", you see each reasoning step and tool call as it happens (via SSE streaming). Follow-up questions work naturally thanks to conversation history (e.g., "Which of those have the best quality scores?" after a vendor list query).
+
+The trace panel shows the complete span tree for each agent execution.

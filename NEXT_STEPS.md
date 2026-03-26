@@ -2,26 +2,32 @@
 
 ## What's Done
 
-- Data generator: 18-stage pipeline, 29 tables, ~10K rows at 1x scale, 12 seed scenarios
-- Exporters: CSV, basic SQL, HANA Cloud SQL, Postgres SQL
-- Deployment: HANA Cloud (Python/hdbcli, CSV executemany) + EC2 Postgres (Bash/SSH)
-- Knowledge graph: HANA Cloud GRAPH WORKSPACE (10 vertex views, 14 edge views, unified views, deploy script with `--dry-run` and `--no-graph` fallback)
-- GraphRAG system: Intent router + graph retrieval + LLM answering (68 tests), MCP server (10 tools, stdio + HTTP), REST API (`POST /chat`), HANA + NetworkX backends
-- LLM integration: SAP GenAI Hub via `sap-ai-sdk-gen` Orchestration V2 (no manual model deployment needed)
-- ML pipeline: UC-02 Invoice Three-Way Match (preprocessing, feature engineering, 4-model training, inference, SAP AI Core Dockerfiles)
-- Documentation: README, ARCHITECTURE, DEPLOYMENT, ML_USE_CASES, CLAUDE.md
+- [x] Data generator: 18-stage pipeline, 29 tables, ~10K rows at 1x scale, 12 seed scenarios
+- [x] Exporters: CSV, basic SQL, HANA Cloud SQL, Postgres SQL
+- [x] Deployment: HANA Cloud (Python/hdbcli, CSV executemany) + EC2 Postgres (Bash/SSH)
+- [x] Knowledge graph: HANA Cloud GRAPH WORKSPACE (10 vertex views, 14 edge views, unified views, deploy script with `--dry-run` and `--no-graph` fallback)
+- [x] GraphRAG system: Intent router + graph retrieval + LLM answering (68 tests), MCP server (10 tools, stdio + HTTP), REST API (`POST /chat`), HANA + NetworkX backends
+- [x] LLM integration: SAP GenAI Hub via `sap-ai-sdk-gen` Orchestration V2 (no manual model deployment needed)
+- [x] ML pipeline: UC-02 Invoice Three-Way Match (preprocessing, feature engineering, 4-model training, inference, SAP AI Core Dockerfiles)
+- [x] Documentation: README, ARCHITECTURE, DEPLOYMENT, ML_USE_CASES, CLAUDE.md
+- [x] Create a UI (React + TypeScript + Cytoscape.js — chat, graph visualization, trace panel)
+- [x] Deploy to Cloud Foundry (manifest.yml, .cfignore, requirements.txt, deployed and running)
+- [x] Demo scenarios defined (docs/DEMO_SCENARIOS.md — 3 persona-driven storylines)
+- [x] Agent mode (LangGraph ReAct with 16 tools, SSE streaming, conversation history)
+- [x] Observability (QueryTrace, span tree, tracing in UI)
+- [x] Content filtering (NRIC detection, data masking)
 
 ---
 
-## 0. Graph Workspace — Your Action Items
+## 0. Graph Workspace — Done
 
-The knowledge graph SQL and deploy script are ready. You need to deploy and validate on your HANA Cloud instance.
+Relational data is loaded to HANA Cloud and the graph workspace is deployed.
 
-### Prerequisites
+### Prerequisites (completed)
 
-- [ ] Relational data already loaded to HANA Cloud (`python scripts/deploy_to_hana.py`)
-- [ ] `.env` configured with HANA Cloud credentials (`HANA_HOST`, `HANA_PORT`, `HANA_USER`, `HANA_PASSWORD`, `HANA_SCHEMA`)
-- [ ] `hdbcli` installed (`pip install -e ".[hana]"`)
+- [x] Relational data already loaded to HANA Cloud (`python scripts/deploy_to_hana.py`)
+- [x] `.env` configured with HANA Cloud credentials (`HANA_HOST`, `HANA_PORT`, `HANA_USER`, `HANA_PASSWORD`, `HANA_SCHEMA`)
+- [x] `hdbcli` installed (`pip install -e ".[hana]"`)
 
 ### Deploy & Validate
 
@@ -88,26 +94,26 @@ LIMIT 20;
 
 ---
 
-## 1. HANA Cloud Validation
+## 1. HANA Cloud Validation — Done
 
-Verify the HANA Cloud exporter against a real BTP instance.
+HANA Cloud exporter verified against a real BTP instance.
 
-- [ ] Provision a HANA Cloud trial instance on SAP BTP
-- [ ] Configure `.env` with real credentials
-- [ ] Run `python scripts/deploy_to_hana.py` and verify all 29 tables load
-- [ ] Spot-check a few tables via SQL console (row counts, FK joins, seed scenarios)
-- [ ] Test idempotent re-deployment (run the script twice)
+- [x] Provision a HANA Cloud trial instance on SAP BTP
+- [x] Configure `.env` with real credentials
+- [x] Run `python scripts/deploy_to_hana.py` and verify all 29 tables load
+- [x] Spot-check a few tables via SQL console (row counts, FK joins, seed scenarios)
+- [x] Test idempotent re-deployment (run the script twice)
 
 ## 2. GenAI Demo Application
 
-The GraphRAG system is functional (MCP server + REST API). Remaining work is UI and ML integration.
+The GraphRAG system is functional with UI, agent mode, and Cloud Foundry deployment. Remaining work is ML integration.
 
-- [ ] Define demo scenarios and user flows (which of the 12 seeds to showcase)
+- [x] Define demo scenarios and user flows — `docs/DEMO_SCENARIOS.md`
 - [x] ~~Choose GenAI framework~~ — SAP GenAI Hub Orchestration V2 (`sap-ai-sdk-gen`)
 - [x] ~~Add GraphRAG over the knowledge graph~~ — Intent router + HANA/NetworkX backends + MCP server + REST API
-- [ ] Create a UI (SAP Fiori, Streamlit, or similar)
+- [x] Create a UI — React + Cytoscape.js with chat, graph viz, trace panel, agent step log
 - [ ] Wire in ML model predictions (UC-02 match status, vendor risk, etc.) as tool calls
-- [ ] Deploy to Cloud Foundry (plan exists at `.claude/plans/cryptic-jumping-llama.md`)
+- [x] Deploy to Cloud Foundry — live at `procurement-graphrag.cfapps.ap10.hana.ondemand.com`
 
 ## 3. ML Use Cases — Tier 1 (High Impact)
 
@@ -158,9 +164,10 @@ These are the most impactful use cases for the demo. UC-02 is done; three remain
 
 ## Suggested Priority Order
 
-1. **HANA Cloud validation** — quick win, unblocks everything downstream
-2. **UC-01 Maverick PO Detection** — straightforward binary classifier, reuses UC-02 infrastructure
-3. **UC-03 Vendor Risk Scoring** — high demo value, shared feature store already has the features
-4. **GenAI demo app** — the reason all this data exists
-5. **Testing & CI** — protect against regressions as use cases multiply
-6. **Remaining ML use cases** — build out in tier order (4 > 5 > 6)
+1. ~~**HANA Cloud validation**~~ — **done**
+2. ~~**GenAI demo app**~~ — **done** (UI, agent mode, CF deployment, observability, content filtering)
+3. **UC-01 Maverick PO Detection** — straightforward binary classifier, reuses UC-02 infrastructure
+4. **UC-03 Vendor Risk Scoring** — high demo value, shared feature store already has the features
+5. **ML model integration** — wire UC-02 (and future models) into the GenAI agent as tool calls
+6. **Testing & CI** — protect against regressions as use cases multiply
+7. **Remaining ML use cases** — build out in tier order (4 > 5 > 6)

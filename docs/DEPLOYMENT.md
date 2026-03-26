@@ -246,6 +246,81 @@ The deploy script prints vertex/edge counts and graph workspace status:
 
 If the HANA Property Graph Engine is not available (e.g., trial instance limitations), use `--no-graph` to create only the vertex/edge views. These views are usable via standard SQL JOINs for the same GraphRAG queries — just without graph traversal algorithms (shortest path, BFS, etc.).
 
+## Cloud Foundry Deployment
+
+The GraphRAG API + React UI can be deployed to SAP BTP Cloud Foundry.
+
+### Prerequisites
+
+- CF CLI installed and logged in (`cf login`)
+- HANA Cloud instance with relational data + graph workspace deployed
+- SAP AI Core service key (for GenAI Hub LLM access)
+- Node.js 18+ (to build the UI)
+
+### Configuration
+
+The manifest (`manifest.yml`) configures:
+
+| Setting | Value | Reason |
+|---------|-------|--------|
+| Memory | 1024M | Agent mode loads LangGraph + LangChain + GenAI Hub SDK |
+| Disk | 1G | Python dependencies + UI assets |
+| Buildpack | python_buildpack | Installs from `requirements.txt` |
+| Backend | HANA | `GRAPH_BACKEND=hana` in manifest env |
+
+Non-secret env vars are set in `manifest.yml`. Secrets must be set via `cf set-env` after first push.
+
+### Deploy
+
+```bash
+# Build UI + push to CF
+bash scripts/deploy_to_cf.sh
+
+# First deploy — set secrets:
+cf set-env procurement-graphrag HANA_HOST <your-hana-host>
+cf set-env procurement-graphrag HANA_PASSWORD <your-password>
+cf set-env procurement-graphrag AICORE_AUTH_URL <auth-url>
+cf set-env procurement-graphrag AICORE_CLIENT_ID <client-id>
+cf set-env procurement-graphrag AICORE_CLIENT_SECRET <client-secret>
+cf set-env procurement-graphrag AICORE_BASE_URL <api-base-url>
+cf set-env procurement-graphrag GENAI_MODEL_NAME anthropic--claude-4.6-opus
+cf restage procurement-graphrag
+```
+
+### .cfignore
+
+The `.cfignore` file excludes everything not needed at runtime (node_modules, data generator, ML, tests, docs) — reducing upload from ~118M to ~360K. Only `graphrag/`, `ui/dist/`, `pyproject.toml`, `requirements.txt`, and `runtime.txt` are uploaded.
+
+### Verification
+
+```bash
+# Health check
+curl https://<app-url>/health
+# Expected: {"status":"ok","agent_available":true}
+
+# Test a query
+curl -X POST https://<app-url>/chat \
+  -H "Content-Type: application/json" \
+  -d '{"question":"Show me high-risk vendors","mode":"router"}'
+```
+
+The UI is accessible at the app's root URL.
+
+### Memory Sizing
+
+| Component | Approx Memory |
+|-----------|--------------|
+| Python runtime | ~50M |
+| FastAPI + uvicorn | ~30M |
+| HANA driver (hdbcli) | ~20M |
+| GenAI Hub SDK | ~30M |
+| LangGraph + LangChain | ~60M |
+| NetworkX (if loaded) | ~40M |
+| **Headroom** | ~790M |
+| **Total allocated** | **1024M** |
+
+512M was insufficient — the app OOM'd during agent mode queries.
+
 ## Redeployment
 
 The deployment is fully idempotent. Running `deploy_to_ec2.sh` again will:
