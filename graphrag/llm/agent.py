@@ -282,7 +282,7 @@ def run_agent_with_trace(
     agent: Any, question: str, history: list[dict] | None = None
 ) -> tuple[dict, QueryTrace]:
     """Invoke the ReAct agent and capture a structured trace."""
-    from langchain_core.messages import HumanMessage
+    from langchain_core.messages import AIMessage, HumanMessage
 
     # Client-side NRIC masking
     masked_question, nric_entities = mask_nric(question)
@@ -302,8 +302,8 @@ def run_agent_with_trace(
     messages = []
     if history:
         messages.extend(
-            HumanMessage(content=m["content"]) if m["role"] == "user"
-            else m
+            AIMessage(content=m["content"]) if m["role"] == "assistant"
+            else HumanMessage(content=m["content"])
             for m in history
         )
     messages.append(HumanMessage(content=masked_question))
@@ -344,7 +344,7 @@ def stream_agent_steps(
       - ``answer`` — final response with full trace
       - ``error``  — if agent execution fails
     """
-    from langchain_core.messages import HumanMessage
+    from langchain_core.messages import AIMessage, HumanMessage
 
     from graphrag.llm.router import _extract_entity_ids
 
@@ -365,7 +365,8 @@ def stream_agent_steps(
         messages: list[Any] = []
         if history:
             messages.extend(
-                HumanMessage(content=m["content"]) if m["role"] == "user" else m
+                AIMessage(content=m["content"]) if m["role"] == "assistant"
+                else HumanMessage(content=m["content"])
                 for m in history
             )
         messages.append(HumanMessage(content=masked_question))

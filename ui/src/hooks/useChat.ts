@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { chat, chatAgentStream, type Mode } from "../api/client";
+import { chat, chatAgentStream, type HistoryEntry, type Mode } from "../api/client";
 import type { AgentStepEvent, ChatMessage, TraceResponse } from "../types";
 
 export function useChat() {
@@ -15,6 +15,12 @@ export function useChat() {
       setMessages((prev) => [...prev, userMsg]);
       setLoading(true);
       setAgentSteps([]);
+
+      // Build conversation history from prior messages
+      const history: HistoryEntry[] = messages.map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
 
       try {
         if (mode === "agent") {
@@ -40,9 +46,10 @@ export function useChat() {
               };
               setMessages((prev) => [...prev, errMsg]);
             },
+            history,
           );
         } else {
-          const res = await chat(question, true, mode);
+          const res = await chat(question, true, mode, history);
           const assistantMsg: ChatMessage = {
             role: "assistant",
             content: res.answer,

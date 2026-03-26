@@ -74,6 +74,7 @@ class ChatRequest(BaseModel):
     stream: bool = False
     include_trace: bool = False
     mode: Literal["router", "agent"] = "router"
+    history: list[dict[str, str]] | None = None
 
 
 class ChatResponse(BaseModel):
@@ -88,7 +89,8 @@ class ChatResponse(BaseModel):
 
 
 async def _stream_agent_events(
-    agent: Any, question: str, include_trace: bool
+    agent: Any, question: str, include_trace: bool,
+    history: list[dict[str, str]] | None = None,
 ) -> AsyncGenerator[str, None]:
     """Bridge the sync ``stream_agent_steps`` generator to async SSE events."""
     from graphrag.llm.agent import stream_agent_steps
@@ -98,7 +100,7 @@ async def _stream_agent_events(
 
     def _run_sync() -> None:
         try:
-            for event in stream_agent_steps(agent, question):
+            for event in stream_agent_steps(agent, question, history=history):
                 q.put(event)
         except Exception as exc:
             q.put({"event": "error", "message": str(exc)})
@@ -140,13 +142,17 @@ async def chat(req: ChatRequest) -> ChatResponse | StreamingResponse:
 
         if req.stream:
             return StreamingResponse(
-                _stream_agent_events(_agent, req.question, req.include_trace),
+                _stream_agent_events(
+                    _agent, req.question, req.include_trace, history=req.history
+                ),
                 media_type="text/event-stream",
             )
 
         from graphrag.llm.agent import run_agent_with_trace
 
-        result, trace = run_agent_with_trace(_agent, req.question)
+        result, trace = run_agent_with_trace(
+            _agent, req.question, history=req.history
+        )
         if req.include_trace:
             result["trace"] = trace.to_dict()
         return ChatResponse(**result)

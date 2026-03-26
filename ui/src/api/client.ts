@@ -4,10 +4,16 @@ const BASE_URL = import.meta.env.VITE_API_URL || "";
 
 export type Mode = "router" | "agent";
 
+export interface HistoryEntry {
+  role: "user" | "assistant";
+  content: string;
+}
+
 export async function chat(
   question: string,
   includeTrace = true,
   mode: Mode = "router",
+  history?: HistoryEntry[],
 ): Promise<ChatResponse> {
   const res = await fetch(`${BASE_URL}/chat`, {
     method: "POST",
@@ -17,6 +23,7 @@ export async function chat(
       stream: false,
       include_trace: includeTrace,
       mode,
+      history: history?.length ? history : undefined,
     }),
   });
   if (!res.ok) {
@@ -31,6 +38,7 @@ export async function chatAgentStream(
   onStep: (step: AgentStepEvent) => void,
   onAnswer: (answer: ChatResponse) => void,
   onError: (msg: string) => void,
+  history?: HistoryEntry[],
 ): Promise<void> {
   const res = await fetch(`${BASE_URL}/chat`, {
     method: "POST",
@@ -40,6 +48,7 @@ export async function chatAgentStream(
       stream: true,
       include_trace: true,
       mode: "agent",
+      history: history?.length ? history : undefined,
     }),
   });
 
