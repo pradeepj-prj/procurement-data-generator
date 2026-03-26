@@ -269,10 +269,25 @@ class GenAIHubClient:
             result = self._service.run(config=config)
             answer = result.final_result.choices[0].message.content
 
-            # Content filtering scores are available but not always exposed
-            # in the same way across SDK versions. We record what we can.
-            details.input_filter = {"passed": True}
-            details.output_filter = {"passed": True}
+            # Extract server-side masking info from intermediate results
+            ir = result.intermediate_results
+            if ir.input_masking:
+                details.entities_masked.append("DPI")
+                if ir.input_masking.data:
+                    details.masked_query = str(ir.input_masking.data)
+                elif ir.input_masking.message:
+                    if not details.client_side_masked:
+                        details.masked_query = ir.input_masking.message
+
+            # Content filtering
+            if ir.input_filtering:
+                details.input_filter = {"passed": True, "message": ir.input_filtering.message}
+            else:
+                details.input_filter = {"passed": True}
+            if ir.output_filtering:
+                details.output_filter = {"passed": True, "message": ir.output_filtering.message}
+            else:
+                details.output_filter = {"passed": True}
 
             return answer, details
 

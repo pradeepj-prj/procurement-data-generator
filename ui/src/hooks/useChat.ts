@@ -75,5 +75,11 @@ export function useChat() {
     [mode],
   );
 
-  return { messages, loading, agentSteps, send, currentTrace, mode, setMode };
+  const clearChat = useCallback(() => {
+    setMessages([]);
+    setCurrentTrace(null);
+    setAgentSteps([]);
+  }, []);
+
+  return { messages, loading, agentSteps, send, clearChat, currentTrace, mode, setMode };
 }

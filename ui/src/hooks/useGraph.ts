@@ -33,63 +33,53 @@ export function useGraph() {
   const [elements, setElements] = useState<ElementDefinition[]>([]);
   const [highlightedIds, setHighlightedIds] = useState<Set<string>>(new Set());
 
-  const addFromTrace = useCallback((trace: TraceResponse) => {
-    setElements((prev) => {
-      const existingNodeIds = new Set(
-        prev.filter((e) => !("source" in (e.data ?? {}))).map((e) => e.data.id),
-      );
-      const existingEdgeIds = new Set(
-        prev.filter((e) => "source" in (e.data ?? {})).map((e) => e.data.id),
-      );
+  const setFromTrace = useCallback((trace: TraceResponse) => {
+    const newElements: ElementDefinition[] = [];
+    const nodeIds = new Set<string>();
 
-      const newElements: ElementDefinition[] = [...prev];
-      const newIds = new Set<string>();
-
-      // Add nodes
-      for (const nodeId of trace.graph_nodes) {
-        if (!existingNodeIds.has(nodeId)) {
-          const type = entityType(nodeId);
-          const style = NODE_STYLES[type] ?? {
-            color: "#9CA3AF",
-            shape: "ellipse",
-          };
-          newElements.push({
-            data: {
-              id: nodeId,
-              label: nodeId,
-              entityType: type,
-              color: style.color,
-              shape: style.shape,
-            },
-          });
-          existingNodeIds.add(nodeId);
-        }
-        newIds.add(nodeId);
+    // Add nodes
+    for (const nodeId of trace.graph_nodes) {
+      if (!nodeIds.has(nodeId)) {
+        const type = entityType(nodeId);
+        const style = NODE_STYLES[type] ?? {
+          color: "#9CA3AF",
+          shape: "ellipse",
+        };
+        newElements.push({
+          data: {
+            id: nodeId,
+            label: nodeId,
+            entityType: type,
+            color: style.color,
+            shape: style.shape,
+          },
+        });
+        nodeIds.add(nodeId);
       }
+    }
 
-      // Add edges
-      for (const edge of trace.graph_edges) {
-        const edgeId = `${edge.source}-${edge.edge_type}-${edge.target}`;
-        if (
-          !existingEdgeIds.has(edgeId) &&
-          existingNodeIds.has(edge.source) &&
-          existingNodeIds.has(edge.target)
-        ) {
-          newElements.push({
-            data: {
-              id: edgeId,
-              source: edge.source,
-              target: edge.target,
-              label: edge.edge_type,
-            },
-          });
-          existingEdgeIds.add(edgeId);
-        }
+    // Add edges
+    const edgeIds = new Set<string>();
+    for (const edge of trace.graph_edges) {
+      const edgeId = `${edge.source}-${edge.edge_type}-${edge.target}`;
+      if (
+        !edgeIds.has(edgeId) &&
+        nodeIds.has(edge.source) &&
+        nodeIds.has(edge.target)
+      ) {
+        newElements.push({
+          data: {
+            id: edgeId,
+            source: edge.source,
+            target: edge.target,
+            label: edge.edge_type,
+          },
+        });
+        edgeIds.add(edgeId);
       }
+    }
 
-      return newElements;
-    });
-
+    setElements(newElements);
     setHighlightedIds(new Set(trace.graph_nodes));
   }, []);
 
@@ -98,5 +88,5 @@ export function useGraph() {
     setHighlightedIds(new Set());
   }, []);
 
-  return { elements, highlightedIds, addFromTrace, clear, nodeStyles: NODE_STYLES };
+  return { elements, highlightedIds, setFromTrace, clear, nodeStyles: NODE_STYLES };
 }

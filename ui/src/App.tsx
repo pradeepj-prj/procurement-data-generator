@@ -8,14 +8,19 @@ import { useChat } from "./hooks/useChat";
 import { useGraph } from "./hooks/useGraph";
 
 export default function App() {
-  const { messages, loading, agentSteps, send, currentTrace, mode, setMode } = useChat();
-  const { elements, highlightedIds, addFromTrace, clear } = useGraph();
+  const { messages, loading, agentSteps, send, clearChat, currentTrace, mode, setMode } = useChat();
+  const { elements, highlightedIds, setFromTrace, clear } = useGraph();
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
 
-  // When a new trace arrives, add its nodes/edges to the graph
+  // When a new trace arrives, replace the graph with this trace's data
   useEffect(() => {
-    if (currentTrace) addFromTrace(currentTrace);
-  }, [currentTrace, addFromTrace]);
+    if (currentTrace) setFromTrace(currentTrace);
+  }, [currentTrace, setFromTrace]);
+
+  const handleNewChat = () => {
+    clearChat();
+    clear();
+  };
 
   return (
     <div className="h-screen flex flex-col">
@@ -26,6 +31,7 @@ export default function App() {
           loading={loading}
           agentSteps={agentSteps}
           onSend={send}
+          onNewChat={handleNewChat}
           onEntityClick={setSelectedNode}
         />
         <GraphView
