@@ -1,0 +1,44 @@
+# Build artifacts & dependencies
+ui/node_modules/
+ui/src/
+ui/public/
+ui/index.html
+ui/package.json
+ui/package-lock.json
+ui/tsconfig*.json
+ui/vite.config.ts
+ui/eslint.config.js
+ui/postcss.config.js
+ui/tailwind.config.js
+procurement_data_generator.egg-info/
+
+# Data generator (not needed at runtime)
+src/
+seeds/
+output/
+
+# ML, tests, docs
+ml/
+tests/
+docs/
+plans/
+todo/
+test_results/
+reference/
+scripts/
+
+# Git, IDE, env
+.git/
+.gitignore
+.claude/
+.pytest_cache/
+.vscode/
+.idea/
+.env
+.env.example
+.DS_Store
+
+# Docs
+README.md
+CLAUDE.md
+NEXT_STEPS.md
