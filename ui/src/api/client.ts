@@ -1,4 +1,4 @@
-import type { ChatResponse } from "../types";
+import type { AgentStepEvent, ChatResponse } from "../types";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "";
 
@@ -24,6 +24,57 @@ export async function chat(
     throw new Error(`API error ${res.status}: ${detail}`);
   }
   return res.json();
+}
+
+export async function chatAgentStream(
+  question: string,
+  onStep: (step: AgentStepEvent) => void,
+  onAnswer: (answer: ChatResponse) => void,
+  onError: (msg: string) => void,
+): Promise<void> {
+  const res = await fetch(`${BASE_URL}/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      question,
+      stream: true,
+      include_trace: true,
+      mode: "agent",
+    }),
+  });
+
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`API error ${res.status}: ${detail}`);
+  }
+
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const payload = line.slice(6).trim();
+      if (!payload) continue;
+
+      try {
+        const event = JSON.parse(payload);
+        if (event.event === "step") onStep(event);
+        else if (event.event === "answer") onAnswer(event);
+        else if (event.event === "error") onError(event.message);
+      } catch {
+        // ignore unparseable lines
+      }
+    }
+  }
 }
 
 export async function health(): Promise<{ status: string; agent_available: boolean }> {

@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import json
+import queue
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -82,6 +84,41 @@ class ChatResponse(BaseModel):
     trace: dict[str, Any] | None = None
 
 
+# ── Agent SSE bridge ─────────────────────────────────────────────────────────
+
+
+async def _stream_agent_events(
+    agent: Any, question: str, include_trace: bool
+) -> AsyncGenerator[str, None]:
+    """Bridge the sync ``stream_agent_steps`` generator to async SSE events."""
+    from graphrag.llm.agent import stream_agent_steps
+
+    q: queue.Queue[dict | None] = queue.Queue()
+    loop = asyncio.get_event_loop()
+
+    def _run_sync() -> None:
+        try:
+            for event in stream_agent_steps(agent, question):
+                q.put(event)
+        except Exception as exc:
+            q.put({"event": "error", "message": str(exc)})
+        finally:
+            q.put(None)  # sentinel
+
+    fut = loop.run_in_executor(None, _run_sync)
+
+    while True:
+        event = await loop.run_in_executor(None, q.get)
+        if event is None:
+            break
+        if event.get("event") == "answer" and not include_trace:
+            event.pop("trace", None)
+        yield f"data: {json.dumps(event)}\n\n"
+
+    yield f"data: {json.dumps({'event': 'done'})}\n\n"
+    await fut
+
+
 # ── Endpoints ────────────────────────────────────────────────────────────────
 
 
@@ -100,9 +137,11 @@ async def chat(req: ChatRequest) -> ChatResponse | StreamingResponse:
                 "Agent mode requires langgraph. "
                 "Install with: pip install -e '.[graphrag-agent]'",
             )
+
         if req.stream:
-            raise HTTPException(
-                400, "Streaming is not supported in agent mode. Use mode='router' for streaming."
+            return StreamingResponse(
+                _stream_agent_events(_agent, req.question, req.include_trace),
+                media_type="text/event-stream",
             )
 
         from graphrag.llm.agent import run_agent_with_trace

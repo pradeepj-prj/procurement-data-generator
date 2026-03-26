@@ -51,6 +51,16 @@ export interface ChatResponse {
   trace?: TraceResponse;
 }
 
+export interface AgentStepEvent {
+  event: "step";
+  type: "reasoning" | "tool_result";
+  thought?: string;
+  tool_calls?: string[];
+  tool_name?: string;
+  result_preview?: string;
+  step_index: number;
+}
+
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;

@@ -8,7 +8,7 @@ import { useChat } from "./hooks/useChat";
 import { useGraph } from "./hooks/useGraph";
 
 export default function App() {
-  const { messages, loading, send, currentTrace, mode, setMode } = useChat();
+  const { messages, loading, agentSteps, send, currentTrace, mode, setMode } = useChat();
   const { elements, highlightedIds, addFromTrace, clear } = useGraph();
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
 
@@ -24,6 +24,7 @@ export default function App() {
         <ChatPanel
           messages={messages}
           loading={loading}
+          agentSteps={agentSteps}
           onSend={send}
           onEntityClick={setSelectedNode}
         />

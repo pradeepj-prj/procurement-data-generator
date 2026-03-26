@@ -1,10 +1,11 @@
 import { useCallback, useState } from "react";
-import { chat, type Mode } from "../api/client";
-import type { ChatMessage, TraceResponse } from "../types";
+import { chat, chatAgentStream, type Mode } from "../api/client";
+import type { AgentStepEvent, ChatMessage, TraceResponse } from "../types";
 
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
+  const [agentSteps, setAgentSteps] = useState<AgentStepEvent[]>([]);
   const [currentTrace, setCurrentTrace] = useState<TraceResponse | null>(null);
   const [mode, setMode] = useState<Mode>("router");
 
@@ -13,19 +14,46 @@ export function useChat() {
       const userMsg: ChatMessage = { role: "user", content: question };
       setMessages((prev) => [...prev, userMsg]);
       setLoading(true);
+      setAgentSteps([]);
 
       try {
-        const res = await chat(question, true, mode);
-        const assistantMsg: ChatMessage = {
-          role: "assistant",
-          content: res.answer,
-          trace: res.trace,
-          sources: res.sources,
-          query_pattern: res.query_pattern,
-          timing_ms: res.trace?.total_ms,
-        };
-        setMessages((prev) => [...prev, assistantMsg]);
-        if (res.trace) setCurrentTrace(res.trace);
+        if (mode === "agent") {
+          await chatAgentStream(
+            question,
+            (step) => setAgentSteps((prev) => [...prev, step]),
+            (answer) => {
+              const assistantMsg: ChatMessage = {
+                role: "assistant",
+                content: answer.answer,
+                trace: answer.trace,
+                sources: answer.sources,
+                query_pattern: answer.query_pattern,
+                timing_ms: answer.trace?.total_ms,
+              };
+              setMessages((prev) => [...prev, assistantMsg]);
+              if (answer.trace) setCurrentTrace(answer.trace);
+            },
+            (errorMsg) => {
+              const errMsg: ChatMessage = {
+                role: "assistant",
+                content: `Error: ${errorMsg}`,
+              };
+              setMessages((prev) => [...prev, errMsg]);
+            },
+          );
+        } else {
+          const res = await chat(question, true, mode);
+          const assistantMsg: ChatMessage = {
+            role: "assistant",
+            content: res.answer,
+            trace: res.trace,
+            sources: res.sources,
+            query_pattern: res.query_pattern,
+            timing_ms: res.trace?.total_ms,
+          };
+          setMessages((prev) => [...prev, assistantMsg]);
+          if (res.trace) setCurrentTrace(res.trace);
+        }
       } catch (err) {
         const errMsg: ChatMessage = {
           role: "assistant",
@@ -34,10 +62,11 @@ export function useChat() {
         setMessages((prev) => [...prev, errMsg]);
       } finally {
         setLoading(false);
+        setAgentSteps([]);
       }
     },
     [mode],
   );
 
-  return { messages, loading, send, currentTrace, mode, setMode };
+  return { messages, loading, agentSteps, send, currentTrace, mode, setMode };
 }

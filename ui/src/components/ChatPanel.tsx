@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import type { ChatMessage } from "../types";
+import type { AgentStepEvent, ChatMessage } from "../types";
 
 interface Props {
   messages: ChatMessage[];
   loading: boolean;
+  agentSteps: AgentStepEvent[];
   onSend: (question: string) => void;
   onEntityClick?: (id: string) => void;
 }
@@ -33,7 +34,64 @@ function SourceBadges({
   );
 }
 
-export function ChatPanel({ messages, loading, onSend, onEntityClick }: Props) {
+function AgentStepLog({ steps }: { steps: AgentStepEvent[] }) {
+  const endRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [steps]);
+
+  return (
+    <div className="bg-gray-800/50 rounded-lg px-3 py-2 space-y-1.5 text-sm">
+      {steps.map((step, i) => (
+        <div key={i} className="flex items-start gap-2 text-gray-400">
+          {step.type === "reasoning" ? (
+            <>
+              <span className="text-purple-400 mt-0.5 shrink-0 text-xs font-medium">
+                thinking
+              </span>
+              <span className="text-gray-300 text-xs">
+                {step.tool_calls?.length
+                  ? `Calling ${step.tool_calls.join(", ")}`
+                  : "Formulating answer..."}
+                {step.thought && (
+                  <span className="text-gray-500 ml-1">
+                    — {step.thought.slice(0, 120)}
+                    {step.thought.length > 120 ? "..." : ""}
+                  </span>
+                )}
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="text-green-400 mt-0.5 shrink-0 text-xs font-medium">
+                result
+              </span>
+              <span className="text-gray-300 text-xs">
+                <span className="font-mono text-emerald-300">
+                  {step.tool_name}
+                </span>
+                {step.result_preview && (
+                  <span className="text-gray-500 ml-1">
+                    — {step.result_preview.slice(0, 100)}
+                    {step.result_preview.length > 100 ? "..." : ""}
+                  </span>
+                )}
+              </span>
+            </>
+          )}
+        </div>
+      ))}
+      <div className="flex items-center gap-2 text-gray-500 text-xs">
+        <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+        Working...
+      </div>
+      <div ref={endRef} />
+    </div>
+  );
+}
+
+export function ChatPanel({ messages, loading, agentSteps, onSend, onEntityClick }: Props) {
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -91,9 +149,13 @@ export function ChatPanel({ messages, loading, onSend, onEntityClick }: Props) {
         ))}
 
         {loading && (
-          <div className="flex items-center gap-2 text-sm text-gray-400">
-            <span className="animate-pulse">Thinking...</span>
-          </div>
+          agentSteps.length > 0 ? (
+            <AgentStepLog steps={agentSteps} />
+          ) : (
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <span className="animate-pulse">Thinking...</span>
+            </div>
+          )
         )}
         <div ref={bottomRef} />
       </div>

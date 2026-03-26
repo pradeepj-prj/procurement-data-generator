@@ -8,7 +8,7 @@ Requires: pip install -e ".[graphrag-agent]"
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Generator
 
 from graphrag.backends.protocol import GraphBackend
 from graphrag.config import GraphRAGConfig
@@ -332,3 +332,93 @@ def run_agent_with_trace(
         "query_pattern": "agent",
         "context_snippet": trace.context_snippet,
     }, trace
+
+
+def stream_agent_steps(
+    agent: Any, question: str, history: list[dict] | None = None
+) -> Generator[dict, None, None]:
+    """Stream agent execution as structured step events.
+
+    Yields dicts with an ``event`` key:
+      - ``step``  — intermediate reasoning or tool result
+      - ``answer`` — final response with full trace
+      - ``error``  — if agent execution fails
+    """
+    from langchain_core.messages import HumanMessage
+
+    from graphrag.llm.router import _extract_entity_ids
+
+    try:
+        masked_question, nric_entities = mask_nric(question)
+
+        trace_builder = AgentTraceBuilder(question=question)
+        if nric_entities:
+            trace_builder.trace.pipeline = {
+                "data_masking": {
+                    "original_query": question,
+                    "masked_query": masked_question,
+                    "entities_masked": nric_entities,
+                    "client_side_masked": True,
+                },
+            }
+
+        messages: list[Any] = []
+        if history:
+            messages.extend(
+                HumanMessage(content=m["content"]) if m["role"] == "user" else m
+                for m in history
+            )
+        messages.append(HumanMessage(content=masked_question))
+
+        final_answer = ""
+        step_index = 0
+
+        for step in agent.stream({"messages": messages}, stream_mode="updates"):
+            if "agent" in step:
+                ai_msg = step["agent"]["messages"][-1]
+                trace_builder.add_llm_step(ai_msg)
+
+                tool_calls = getattr(ai_msg, "tool_calls", [])
+                thought = getattr(ai_msg, "content", "") or ""
+
+                yield {
+                    "event": "step",
+                    "type": "reasoning",
+                    "thought": thought[:200] if isinstance(thought, str) else "",
+                    "tool_calls": [tc.get("name", "?") for tc in tool_calls] if tool_calls else [],
+                    "step_index": step_index,
+                }
+                step_index += 1
+
+                if not tool_calls:
+                    final_answer = thought
+
+            elif "tools" in step:
+                for tool_msg in step["tools"]["messages"]:
+                    trace_builder.add_tool_step(tool_msg)
+                    tool_name = getattr(tool_msg, "name", "unknown")
+                    content = getattr(tool_msg, "content", "")
+
+                    yield {
+                        "event": "step",
+                        "type": "tool_result",
+                        "tool_name": tool_name,
+                        "result_preview": content[:200] if isinstance(content, str) else "",
+                        "step_index": step_index,
+                    }
+                    step_index += 1
+
+        sources = _extract_entity_ids(final_answer)
+        trace = trace_builder.finalize(final_answer, sources)
+
+        yield {
+            "event": "answer",
+            "answer": final_answer,
+            "sources": sources,
+            "query_pattern": "agent",
+            "context_snippet": trace.context_snippet,
+            "trace": trace.to_dict(),
+        }
+
+    except Exception as exc:
+        yield {"event": "error", "message": str(exc)}
