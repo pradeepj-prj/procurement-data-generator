@@ -197,10 +197,21 @@ def create_procurement_agent(backend: GraphBackend, config: GraphRAGConfig) -> A
 class AgentTraceBuilder:
     """Builds a QueryTrace from LangGraph agent execution steps."""
 
+    # Maps tool_name → (arg_key_for_anchor, edge_type, anchor_is_source)
+    _TOOL_EDGE_MAP: dict[str, tuple[str, str, bool]] = {
+        "get_vendors_for_material": ("material_id", "SUPPLIES", False),  # VND → MAT
+        "get_materials_for_vendor": ("vendor_id", "SUPPLIES", True),  # VND → MAT
+        "get_procure_to_pay_chain": ("po_id", "ORDERED_FROM", False),  # PO → VND
+        "get_invoice_context": ("invoice_id", "INVOICED_FOR", True),  # INV → PO
+        "get_vendors_for_plant_with_contracts": ("plant_id", "LOCATED_AT", False),
+    }
+
     def __init__(self, question: str) -> None:
         self.trace = QueryTrace(question=question)
         self.agent_span = Span(name="agent", start_ms=_now_ms())
         self._all_tool_results: list[str] = []
+        self._pending_tool_calls: dict[str, dict] = {}  # tool_call_id → {name, args}
+        self._tool_invocations: list[tuple[str, dict, str]] = []  # (name, args, result)
         self._step_start: float = _now_ms()
 
     def add_llm_step(self, ai_message: Any) -> None:
@@ -214,6 +225,15 @@ class AgentTraceBuilder:
 
         tool_calls = getattr(ai_message, "tool_calls", [])
         content = getattr(ai_message, "content", "")
+
+        # Store pending tool calls so we can pair args with results
+        for tc in tool_calls:
+            tc_id = tc.get("id", "")
+            if tc_id:
+                self._pending_tool_calls[tc_id] = {
+                    "name": tc.get("name", "?"),
+                    "args": tc.get("args", {}),
+                }
 
         span.metadata = {
             "tool_calls": [tc.get("name", "?") for tc in tool_calls] if tool_calls else [],
@@ -230,6 +250,12 @@ class AgentTraceBuilder:
         now = _now_ms()
         tool_name = getattr(tool_message, "name", "unknown")
         content = getattr(tool_message, "content", "")
+        tool_call_id = getattr(tool_message, "tool_call_id", "")
+
+        # Pair with pending tool call args
+        args = {}
+        if tool_call_id and tool_call_id in self._pending_tool_calls:
+            args = self._pending_tool_calls.pop(tool_call_id).get("args", {})
 
         span = Span(
             name=f"tool:{tool_name}",
@@ -244,6 +270,7 @@ class AgentTraceBuilder:
         self.agent_span.children.append(span)
         if isinstance(content, str):
             self._all_tool_results.append(content)
+            self._tool_invocations.append((tool_name, args, content))
         self._step_start = now
 
     def finalize(self, answer: str, sources: list[str]) -> QueryTrace:
@@ -260,10 +287,62 @@ class AgentTraceBuilder:
             all_ids.update(ids)
 
         self.trace.graph_nodes = sorted(all_ids)
-        self.trace.graph_edges = []
+        self.trace.graph_edges = self._infer_edges(all_ids)
         self.trace.context_snippet = self._context_summary()
 
         return self.trace
+
+    def _infer_edges(self, all_node_ids: set[str]) -> list[dict[str, str]]:
+        """Infer graph edges from tool invocations.
+
+        Uses the tool name + args to determine the anchor entity, then
+        extracts entity IDs from the result text as the other end of edges.
+        """
+        seen: set[str] = set()
+        edges: list[dict[str, str]] = []
+
+        for tool_name, args, result_text in self._tool_invocations:
+            result_ids = set(_extract_ids_from_result({"text": result_text}))
+
+            # Strategy 1: tool-specific edge mapping
+            if tool_name in self._TOOL_EDGE_MAP:
+                arg_key, edge_type, anchor_is_source = self._TOOL_EDGE_MAP[tool_name]
+                anchor_id = args.get(arg_key, "")
+                if anchor_id and anchor_id in all_node_ids:
+                    for rid in result_ids:
+                        if rid != anchor_id and rid in all_node_ids:
+                            if anchor_is_source:
+                                key = f"{anchor_id}-{edge_type}-{rid}"
+                                edge = {"source": anchor_id, "target": rid, "edge_type": edge_type}
+                            else:
+                                key = f"{rid}-{edge_type}-{anchor_id}"
+                                edge = {"source": rid, "target": anchor_id, "edge_type": edge_type}
+                            if key not in seen:
+                                seen.add(key)
+                                edges.append(edge)
+                continue
+
+            # Strategy 2: vendor_profile — vendor connects to materials and contracts
+            if tool_name == "get_vendor_profile":
+                anchor_id = args.get("vendor_id", "")
+                if anchor_id and anchor_id in all_node_ids:
+                    for rid in result_ids:
+                        if rid == anchor_id:
+                            continue
+                        if rid.startswith("MAT-"):
+                            et = "SUPPLIES"
+                        elif rid.startswith("CTR-"):
+                            et = "HAS_CONTRACT"
+                        elif rid.startswith("PO-"):
+                            et = "ORDERED_FROM"
+                        else:
+                            continue
+                        key = f"{anchor_id}-{et}-{rid}"
+                        if key not in seen:
+                            seen.add(key)
+                            edges.append({"source": anchor_id, "target": rid, "edge_type": et})
+
+        return edges
 
     def _context_summary(self) -> str:
         """Summarize tools called for the context snippet."""
