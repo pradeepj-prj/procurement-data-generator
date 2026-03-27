@@ -28,28 +28,9 @@ ml = [
     "plotly>=5.18",
     "jupyter>=1.0",
 ]
-graphrag = [
-    "mcp>=1.0",
-    "fastapi>=0.115",
-    "uvicorn>=0.30",
-    "sap-ai-sdk-gen>=6.1.2",
-    "pydantic>=2.0",
-    "networkx>=3.0",
-    "pandas>=2.0",
-]
-graphrag-hana = [
-    "procurement-data-generator[graphrag]",
-    "hdbcli>=2.18",
-]
-graphrag-agent = [
-    "procurement-data-generator[graphrag]",
-    "langgraph>=0.4",
-    "langchain-core>=0.3",
-]
-
 [project.scripts]
 procurement-generator = "procurement_generator.cli:main"
 
 [tool.setuptools.packages.find]
-where = ["src", "."]
-include = ["procurement_generator*", "graphrag*"]
+where = ["src"]
+include = ["procurement_generator*"]

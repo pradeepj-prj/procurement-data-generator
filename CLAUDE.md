@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Procurement data generator for AMR manufacturing — produces realistic, referentially-intact procurement datasets (29 tables, ~10K rows at 1x scale) for a GenAI demo on SAP HANA Cloud.
 
+> **Note:** GenAI backend and UI have moved to separate repos: `procurement-genai-backend` and `procurement-ui`.
+
 ## Build & Run
 
 ```bash
@@ -41,54 +43,6 @@ python scripts/graph/deploy_graph.py --no-graph
 
 # Install ML dependencies
 pip install -e ".[ml]"
-
-# Install GraphRAG (NetworkX only, no HANA needed)
-pip install -e ".[graphrag]"
-
-# Install GraphRAG + HANA Cloud backend
-pip install -e ".[graphrag-hana]"
-
-# Install GraphRAG + LangGraph agent mode
-pip install -e ".[graphrag-agent]"
-
-# MCP Server (NetworkX backend, no DB)
-GRAPH_BACKEND=networkx python -m graphrag.mcp_server
-
-# MCP Server (HANA Cloud backend)
-GRAPH_BACKEND=hana python -m graphrag.mcp_server
-
-# MCP Server (HTTP transport for SAP GenAI Hub MCP Gateway)
-python -m graphrag.mcp_server --transport streamable-http --port 8080
-
-# REST API
-python -m graphrag.api
-
-# REST API (dev mode with auto-reload)
-uvicorn graphrag.api:app --reload --port 8000
-
-# UI dev server (React + Vite)
-cd ui && npm run dev
-
-# UI production build
-cd ui && npm run build
-
-# Agent mode query (requires graphrag-agent deps)
-curl -X POST http://localhost:8000/chat \
-  -H "Content-Type: application/json" \
-  -d '{"question": "Which vendors supply lidar sensors?", "mode": "agent", "include_trace": true}'
-
-# Agent mode with SSE streaming (live step visibility)
-curl -N -X POST http://localhost:8000/chat \
-  -H "Content-Type: application/json" \
-  -d '{"question": "Which vendors supply lidar sensors?", "mode": "agent", "stream": true}'
-
-# Agent mode with conversation history
-curl -X POST http://localhost:8000/chat \
-  -H "Content-Type: application/json" \
-  -d '{"question": "Which of those have the best quality?", "mode": "agent", "history": [{"role": "user", "content": "Which vendors supply lidar sensors?"}, {"role": "assistant", "content": "I found VND-HOKUYO, VND-00101..."}]}'
-
-# Deploy to Cloud Foundry
-bash scripts/deploy_to_cf.sh
 
 # Train UC-02 model (from CSV data)
 cd ml/uc_02_invoice_match/training
@@ -128,26 +82,9 @@ Key generation order: org → categories → materials → legal entities → ve
 | `ml/uc_02_invoice_match/training/train.py` | 4-model training (LR, RF, XGBoost, LightGBM) with Optuna + MLflow |
 | `ml/uc_02_invoice_match/inference/serve.py` | Inference predictor with batch scoring and feature explanations |
 | `src/procurement_generator/exporters/hana_exporter.py` | HANA Cloud SQL exporter |
-| `graphrag/llm/genai_hub.py` | SAP GenAI Hub LLM client (Orchestration V2, `sap-ai-sdk-gen`) |
 | `scripts/deploy_to_hana.py` | HANA Cloud deploy script (hdbcli, DDL from SQL + data from CSV via executemany) |
 | `scripts/graph/create_graph_workspace.sql` | Graph workspace DDL (10 vertex views, 14 edge views, GRAPH WORKSPACE) |
 | `scripts/graph/deploy_graph.py` | Graph workspace deploy script (`--dry-run`, `--no-graph` fallback) |
-| `graphrag/config.py` | GraphRAG config (HANA + NetworkX + GenAI Hub) from `.env` |
-| `graphrag/backends/protocol.py` | `GraphBackend` Protocol (22 methods: 16 graph + 6 relational) |
-| `graphrag/backends/networkx_backend.py` | NetworkX backend (CSV → MultiDiGraph + pandas tables) |
-| `graphrag/backends/hana_backend.py` | HANA Cloud backend (SQL on vertex/edge views + base tables) |
-| `graphrag/retrieval/context_formatter.py` | Format graph results as structured text for LLM (12 formatters) |
-| `graphrag/llm/router.py` | Intent classification → graph query → LLM answer (22 patterns) |
-| `graphrag/llm/agent.py` | LangGraph ReAct agent (16 tools, multi-step reasoning, gpt-5) |
-| `graphrag/llm/prompts.py` | System prompts: RAG, router classifier, agent |
-| `graphrag/observability/trace.py` | Span, QueryTrace, TracingBackendProxy, AgentTraceBuilder |
-| `graphrag/mcp_server.py` | MCP server (16 tools, stdio + HTTP transport) |
-| `graphrag/api.py` | FastAPI REST endpoint (`POST /chat`, router + agent modes) |
-| `ui/` | React + TypeScript + Cytoscape.js UI (chat, graph viz, trace panel) |
-| `manifest.yml` | Cloud Foundry deployment manifest (1024M, python_buildpack) |
-| `.cfignore` | CF upload exclusions (reduces ~118M → ~360K) |
-| `requirements.txt` | CF buildpack deps (`.[graphrag-hana,graphrag-agent]`) |
-| `scripts/deploy_to_cf.sh` | Build UI + `cf push` + secrets instructions |
 
 ## ML Use Cases
 
@@ -224,8 +161,6 @@ cp .env.example .env
 
 **EC2 Postgres**: `EC2_IP`, `SSH_KEY`, `SSH_USER` (ubuntu), `DB_NAME` (procurement_demo), `DB_USER` (procurement_user), `DB_PASSWORD`, `DB_SCHEMA` (procurement), `DB_PORT` (5432).
 
-**SAP GenAI Hub (AI Core)**: `AICORE_AUTH_URL`, `AICORE_CLIENT_ID`, `AICORE_CLIENT_SECRET`, `AICORE_RESOURCE_GROUP` (default), `AICORE_BASE_URL`, `GENAI_MODEL_NAME` (vendor-prefixed, e.g. `anthropic--claude-4.6-opus`). Uses `sap-ai-sdk-gen` Orchestration V2 — no manual model deployment needed.
-
 ### Data Pipeline
 
 ```bash
@@ -239,9 +174,6 @@ python scripts/deploy_to_hana.py --dry-run # preview only
 # 3. Deploy to EC2 Postgres
 bash scripts/deploy_to_ec2.sh             # real deploy
 bash scripts/deploy_to_ec2.sh --dry-run   # preview only
-
-# 4. Deploy GraphRAG API + UI to Cloud Foundry
-bash scripts/deploy_to_cf.sh
 ```
 
 ### Export Formats

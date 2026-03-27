@@ -16,6 +16,7 @@
 - [x] Agent mode (LangGraph ReAct with 16 tools, SSE streaming, conversation history)
 - [x] Observability (QueryTrace, span tree, tracing in UI)
 - [x] Content filtering (NRIC detection, data masking)
+- [x] GenAI backend and UI split into separate repos (`procurement-genai-backend`, `procurement-ui`)
 
 ---
 
@@ -106,14 +107,9 @@ HANA Cloud exporter verified against a real BTP instance.
 
 ## 2. GenAI Demo Application
 
-The GraphRAG system is functional with UI, agent mode, and Cloud Foundry deployment. Remaining work is ML integration.
-
-- [x] Define demo scenarios and user flows — `docs/DEMO_SCENARIOS.md`
-- [x] ~~Choose GenAI framework~~ — SAP GenAI Hub Orchestration V2 (`sap-ai-sdk-gen`)
-- [x] ~~Add GraphRAG over the knowledge graph~~ — Intent router + HANA/NetworkX backends + MCP server + REST API
-- [x] Create a UI — React + Cytoscape.js with chat, graph viz, trace panel, agent step log
-- [ ] Wire in ML model predictions (UC-02 match status, vendor risk, etc.) as tool calls
-- [x] Deploy to Cloud Foundry — live at `procurement-graphrag.cfapps.ap10.hana.ondemand.com`
+Moved to separate repositories:
+- **Backend**: `procurement-genai-backend` — being rebuilt from scratch (see LEARNINGS.md in that repo)
+- **UI**: `procurement-ui` — being rebuilt from scratch (see LEARNINGS.md in that repo)
 
 ## 3. ML Use Cases — Tier 1 (High Impact)
 
@@ -164,10 +160,7 @@ These are the most impactful use cases for the demo. UC-02 is done; three remain
 
 ## Suggested Priority Order
 
-1. ~~**HANA Cloud validation**~~ — **done**
-2. ~~**GenAI demo app**~~ — **done** (UI, agent mode, CF deployment, observability, content filtering)
-3. **UC-01 Maverick PO Detection** — straightforward binary classifier, reuses UC-02 infrastructure
-4. **UC-03 Vendor Risk Scoring** — high demo value, shared feature store already has the features
-5. **ML model integration** — wire UC-02 (and future models) into the GenAI agent as tool calls
-6. **Testing & CI** — protect against regressions as use cases multiply
-7. **Remaining ML use cases** — build out in tier order (4 > 5 > 6)
+1. **UC-01 Maverick PO Detection** — straightforward binary classifier, reuses UC-02 infrastructure
+2. **UC-03 Vendor Risk Scoring** — high demo value, shared feature store already has the features
+3. **Testing & CI** — protect against regressions as use cases multiply
+4. **Remaining ML use cases** — build out in tier order (4 > 5 > 6)

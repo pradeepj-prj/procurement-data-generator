@@ -58,23 +58,6 @@ cp .env.example .env
 bash scripts/deploy_to_ec2.sh
 ```
 
-## Deploy to Cloud Foundry
-
-```bash
-# Build UI + push to CF
-bash scripts/deploy_to_cf.sh
-
-# Set secrets (first deploy only)
-cf set-env procurement-graphrag HANA_HOST <value>
-cf set-env procurement-graphrag HANA_PASSWORD <value>
-cf set-env procurement-graphrag AICORE_AUTH_URL <value>
-cf set-env procurement-graphrag AICORE_CLIENT_ID <value>
-cf set-env procurement-graphrag AICORE_CLIENT_SECRET <value>
-cf set-env procurement-graphrag AICORE_BASE_URL <value>
-cf set-env procurement-graphrag GENAI_MODEL_NAME anthropic--claude-4.6-opus
-cf restage procurement-graphrag
-```
-
 ## Data Model
 
 29 tables organized in FK-safe dependency order:
@@ -139,52 +122,6 @@ An 18-stage orchestrator runs generators in dependency order, validates after ea
 | SEED-011 | Conditional vendor (sheet metal) |
 | SEED-012 | Multi-plant sourcing (BLDC Motor) |
 
-## GraphRAG
-
-A graph-based retrieval-augmented generation system over the procurement data. Two query modes:
-
-- **Router** -- intent classification → graph retrieval → LLM answer (22 query patterns, fast single-hop)
-- **Agent** -- LangGraph ReAct agent with multi-step reasoning, 16 graph/relational tools, SSE streaming with live step visibility, and conversation history for multi-turn interactions
-
-```bash
-# Install GraphRAG (NetworkX backend, no DB needed)
-pip install -e ".[graphrag]"
-
-# Install GraphRAG + HANA Cloud backend
-pip install -e ".[graphrag-hana]"
-
-# Install GraphRAG + LangGraph agent mode
-pip install -e ".[graphrag-agent]"
-
-# MCP Server (16 tools, stdio transport)
-GRAPH_BACKEND=networkx python -m graphrag.mcp_server
-
-# MCP Server (HTTP transport for SAP GenAI Hub MCP Gateway)
-python -m graphrag.mcp_server --transport streamable-http --port 8080
-
-# REST API
-GRAPH_BACKEND=hana python -m graphrag.api
-
-# React UI (chat + graph visualization + trace panel)
-cd ui && npm run dev
-```
-
-Two backends: **NetworkX** (loads from CSV, runs locally) and **HANA Cloud** (SQL on vertex/edge views). The LLM client uses SAP AI Core Orchestration V2 with content filtering and data masking (NRIC detection) — no manual model deployment needed, just set `AICORE_*` env vars from the service key.
-
-### REST API Examples
-
-```bash
-# Router mode (single-hop)
-curl -X POST http://localhost:8000/chat \
-  -H "Content-Type: application/json" \
-  -d '{"question": "Which vendors supply lidar sensors?", "mode": "router"}'
-
-# Agent mode (multi-step reasoning, with trace)
-curl -X POST http://localhost:8000/chat \
-  -H "Content-Type: application/json" \
-  -d '{"question": "Compare delivery performance across lidar vendors", "mode": "agent", "include_trace": true}'
-```
-
 ## ML Use Cases
 
 The generated data supports 13 ML use cases across three tiers. UC-02 (Invoice Three-Way Match) is fully implemented.
@@ -226,23 +163,10 @@ procurement-data-generator/
     validators/              # FK integrity, business rules, stats
     exporters/               # CSV, SQL, HANA Cloud, Postgres
   seeds/                     # YAML seed files (12 scenarios)
-  graphrag/
-    llm/genai_hub.py         # SAP GenAI Hub LLM client (content filtering, NRIC masking)
-    llm/router.py            # Intent classification → graph query → LLM answer
-    llm/agent.py             # LangGraph ReAct agent (16 tools, multi-step reasoning)
-    backends/                # HANA Cloud + NetworkX graph backends
-    observability/trace.py   # Query tracing with span tree
-    mcp_server.py            # MCP server (16 tools, stdio + HTTP)
-    api.py                   # FastAPI REST (POST /chat, streaming, router + agent modes)
-  ui/                        # React + TypeScript + Cytoscape.js chat interface
   scripts/
     deploy_to_hana.py        # HANA Cloud deployment (hdbcli)
     deploy_to_ec2.sh         # EC2 Postgres deployment (SSH)
-    deploy_to_cf.sh          # Cloud Foundry deployment
     graph/deploy_graph.py    # Graph workspace deployment
-  manifest.yml               # CF deployment manifest
-  .cfignore                  # CF ignore rules
-  requirements.txt           # CF Python dependencies
   ml/
     common/                  # Shared DB config, feature store
     data_processing/         # SQL + Python preprocessing
@@ -266,10 +190,12 @@ pytest tests/
 - Python 3.10+
 - Core: `pyyaml`, `faker`
 - HANA deploy: `hdbcli` (`pip install -e ".[hana]"`)
-- GraphRAG: `sap-ai-sdk-gen`, `mcp`, `fastapi`, `networkx` (`pip install -e ".[graphrag]"`)
-- GraphRAG Agent: `langgraph`, `langchain-core` (`pip install -e ".[graphrag-agent]"`)
 - ML: `pandas`, `scikit-learn`, `xgboost`, `lightgbm`, `mlflow`, `optuna` (`pip install -e ".[ml]"`)
-- UI: Node.js 18+ (for development builds)
+
+## Related Projects
+
+- **[procurement-genai-backend](../procurement-genai-backend)** — GenAI Q&A backend over the procurement knowledge graph
+- **[procurement-ui](../procurement-ui)** — React frontend for chat, graph visualization, and trace display
 
 ## License
 
